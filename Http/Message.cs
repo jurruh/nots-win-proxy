@@ -32,6 +32,15 @@ namespace Http
             this.Body = ParseBody(bytes);
         }
 
+        public Boolean IsComplete()
+        {
+            int parsed;
+            return this.Content.Contains("\r\n\r\n") && (
+                       !Headers.ContainsKey("Content-length") || 
+                       (Int32.TryParse(Headers["Content-length"], out parsed) && parsed == Body.Length)
+                       );
+        }
+
         private Dictionary<string, string> ParseHeaders(string content)
         {
             var headers = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
@@ -48,8 +57,10 @@ namespace Http
                 }
 
                 var index = line.IndexOf(":", StringComparison.Ordinal);
-
-                headers.Add(line.Substring(0, index), line.Substring(index + 1));
+                if (index != -1)
+                {
+                    headers.Add(line.Substring(0, index), line.Substring(index + 1));
+                }
             }
 
             return headers;
@@ -62,9 +73,10 @@ namespace Http
             var contentStart = str.IndexOf("\r\n\r\n", StringComparison.Ordinal) + 4;
             var contentLength = 0;
 
-            if (Headers.ContainsKey("content-length"))
+            int parsed;
+            if (Headers.ContainsKey("content-length") && Int32.TryParse(Headers["Content-length"], out parsed))
             {
-                contentLength = Int32.Parse(Headers["content-length"]);
+                contentLength = parsed;
             }
 
             if (content.Length >= contentStart + contentLength)

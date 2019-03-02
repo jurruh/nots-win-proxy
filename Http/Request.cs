@@ -62,7 +62,7 @@ namespace Http
                 headers += $"{keyValuePair.Key}: {keyValuePair.Value}\r\n";
             }
 
-            return $"{status}{headers}\r\n{Body}";
+            return $"{status}{headers}\r\n";
         }
     }
 }

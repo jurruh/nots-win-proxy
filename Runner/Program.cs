@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Runner
 {
-    class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var proxy = new Proxy.Proxy(8080);
             await proxy.Start();

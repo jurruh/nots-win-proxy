@@ -29,6 +29,7 @@ namespace Http
                     {
                         var httpStream = new HttpStream(stream);
 
+                        //Todo remove encoding ascii
                         var s = request.ToString();
                         var bytes = Encoding.ASCII.GetBytes(request.ToString());
                         await stream.WriteAsync(bytes, 0, bytes.Length);

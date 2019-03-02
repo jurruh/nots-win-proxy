@@ -9,7 +9,7 @@ namespace Http
 {
     class HttpStream
     {
-        public static int Buffersize = 80000;
+        public static int Buffersize = 1;
 
         private NetworkStream Stream { get; set; }
 
@@ -20,10 +20,12 @@ namespace Http
 
         public async Task<T> ReadHttpStream<T>() where T : Message, new()
         {
-            byte[] buffer = new byte[Buffersize];
+            List<byte> allBytes = new List<byte>();
 
+            T result = null;
             while (true) // Infinite loop for reading the buffer
             {
+                byte[] buffer = new byte[Buffersize];
                 await Stream.ReadAsync(buffer, 0, Buffersize);
 
                 if (buffer.Where(x => x == 0).ToList().Count == buffer.Length)
@@ -31,15 +33,17 @@ namespace Http
                     break; // client disconnected
                 }
 
-                //TODO add length for buffersize
-                break;
+                allBytes = allBytes.Concat(buffer).ToList();
+
+                result = new T();
+                result.Load(allBytes.ToArray());
+                if (result.IsComplete())
+                {
+                    break;
+                }
             }
 
-            var d = new T();
-
-            d.Load(buffer);
-
-            return d;
+            return result;
         }
 
         public async Task Write(Response response)
