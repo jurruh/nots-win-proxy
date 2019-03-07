@@ -9,7 +9,7 @@ namespace Http
 {
     class HttpStream
     {
-        public static int Buffersize = 1;
+        public static int Buffersize = 1024;
 
         private NetworkStream Stream { get; set; }
 
@@ -33,11 +33,13 @@ namespace Http
                     break; // client disconnected
                 }
 
-                allBytes = allBytes.Concat(buffer).ToList();
+                Console.WriteLine(Encoding.ASCII.GetString(buffer));
 
+                allBytes = allBytes.Concat(buffer).ToList();
+                
                 result = new T();
                 result.Load(allBytes.ToArray());
-                if (result.IsComplete())
+                if (result.IsComplete() && !result.IsClosableConnection())
                 {
                     break;
                 }
@@ -49,6 +51,8 @@ namespace Http
         public async Task Write(Response response)
         {
             byte[] buffer = response.GetBytes();
+
+            Console.WriteLine(Encoding.ASCII.GetString(buffer));
 
             await Stream.WriteAsync(buffer, 0, buffer.Length);
         }

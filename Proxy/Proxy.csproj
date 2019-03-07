@@ -41,6 +41,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Filters\AdResponseFilter.cs" />
+    <Compile Include="Filters\BasicAuthenticationRequestFilter.cs" />
+    <Compile Include="Filter.cs" />
+    <Compile Include="Filters\CacheRequestFilter.cs" />
+    <Compile Include="Filters\PrivacyRequestFilter.cs" />
+    <Compile Include="Filters\PrivacyResponseFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
   </ItemGroup>

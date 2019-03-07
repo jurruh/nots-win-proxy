@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Http;
+using Proxy.Filters;
 
 namespace Proxy
 {
@@ -14,9 +15,20 @@ namespace Proxy
     {
         private int Port { get; set; }
 
+        private List<Filter<Request>> requestFilters;
+        private List<Filter<Response>> responseFilters;
+
         public Proxy(int Port)
         {
             this.Port = Port;
+
+            this.requestFilters = new List<Filter<Request>>();
+            this.responseFilters = new List<Filter<Response>>();
+
+            // If there is time, this can be done using reflection
+            responseFilters.Add(new AdResponseFilter());
+            requestFilters.Add(new BasicAuthenticationRequestFilter());
+            requestFilters.Add(new PrivacyRequestFilter());
         }
 
         public async Task Start()
@@ -25,22 +37,54 @@ namespace Proxy
 
             server.RequestReceived += async (sender, args) =>
             {
-                var httpClient = new Http.Client(args.Request.ResolveToAddress(), 80);
+                var request = args.Request;
 
-                var response = await httpClient.Get(args.Request);
+                if (ApplyRequestFilters(args, ref request)) return;
+
+                var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port);
+                var response = await httpClient.Get(request);
+
+                if (ApplyResponseFilters(args, ref response)) return;
 
                 if (response != null)
                 {
                     args.ResponseAction(response);
                 }
-                else
-                {
-                    // TODO
-                }
-
             };
 
             await server.Start();
+        }
+
+        private bool ApplyResponseFilters(RequestEventArgs args, ref Response response)
+        {
+            foreach (var filter in responseFilters)
+            {
+                response = filter.Apply(response);
+
+                if (filter.AbortResponse != null)
+                {
+                    args.ResponseAction(filter.AbortResponse);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ApplyRequestFilters(RequestEventArgs args, ref Request request)
+        {
+            foreach (var filter in requestFilters)
+            {
+                request = filter.Apply(request);
+
+                if (filter.AbortResponse != null)
+                {
+                    args.ResponseAction(filter.AbortResponse);
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

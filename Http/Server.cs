@@ -29,17 +29,25 @@ namespace Http
             {
                 var client = await tcpListener.AcceptTcpClientAsync();
 
-                var stream = client.GetStream();
-                var httpStream = new HttpStream(stream);
+                Task.Run(async () =>
+                {
+                    var stream = client.GetStream();
+                    var httpStream = new HttpStream(stream);
 
-                var request = await httpStream.ReadHttpStream<Request>();
+                    var request = await httpStream.ReadHttpStream<Request>();
 
-                RequestReceived?.Invoke(this,
-                    new RequestEventArgs(request, async response =>
+                    if (request != null && request.Uri.Port != -1 && request.Uri.Port != 443)
                     {
-                        await httpStream.Write(response);
-                        stream.Close();
-                    }));
+                        RequestReceived?.Invoke(this,
+                            new RequestEventArgs(request, async response =>
+                            {
+                                await httpStream.Write(response);
+                                stream.Close();
+                            }));
+                    
+                    }
+                });
+
             }
         }
     }

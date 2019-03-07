@@ -8,6 +8,10 @@ namespace Http
 {
     public class Response : Message
     {
+        public int Status { get; set; } = 200;
+
+        public string StatusMessage = "OK";
+
         public void Load(byte[] bytes)
         {
             base.Load(bytes);
@@ -17,11 +21,15 @@ namespace Http
 
         public byte[] GetBytes()
         {
-            String status = $"HTTP/1.0 200 OK\r\n";
+            String status = $"HTTP/1.0 {this.Status} {this.StatusMessage}\r\n";
 
             String headers = "";
 
-            headers += $"Content-length: {Body.Length}\r\n";
+            if (!IsClosableConnection())
+            {
+                headers += $"Content-length: {Body.Length}\r\n";
+            }
+
             foreach (var keyValuePair in this.Headers)
             {
                 if (!keyValuePair.Key.ToLower().Equals("content-length"))
