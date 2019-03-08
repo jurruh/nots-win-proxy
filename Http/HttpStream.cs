@@ -33,8 +33,6 @@ namespace Http
                     break; // client disconnected
                 }
 
-                Console.WriteLine(Encoding.ASCII.GetString(buffer));
-
                 allBytes = allBytes.Concat(buffer).ToList();
                 
                 result = new T();
@@ -51,8 +49,6 @@ namespace Http
         public async Task Write(Response response)
         {
             byte[] buffer = response.GetBytes();
-
-            Console.WriteLine(Encoding.ASCII.GetString(buffer));
 
             await Stream.WriteAsync(buffer, 0, buffer.Length);
         }

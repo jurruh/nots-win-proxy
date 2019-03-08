@@ -18,9 +18,12 @@ namespace Proxy
         private List<Filter<Request>> requestFilters;
         private List<Filter<Response>> responseFilters;
 
+        private Cache Cache { get; set; }
+
         public Proxy(int Port)
         {
             this.Port = Port;
+            this.Cache = new Cache();
 
             this.requestFilters = new List<Filter<Request>>();
             this.responseFilters = new List<Filter<Response>>();
@@ -41,6 +44,11 @@ namespace Proxy
 
                 if (ApplyRequestFilters(args, ref request)) return;
 
+                if (Cache.IsCached(request)) {
+                    args.ResponseAction(Cache.Get(request));
+                    return;
+                }
+
                 var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port);
                 var response = await httpClient.Get(request);
 
@@ -48,6 +56,7 @@ namespace Proxy
 
                 if (response != null)
                 {
+                    Cache.Add(request, response);
                     args.ResponseAction(response);
                 }
             };

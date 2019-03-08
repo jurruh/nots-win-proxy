@@ -41,7 +41,13 @@ namespace IntegrationTests
                 Version = HttpVersion.Version10
             });
 
-//            Console.Write(await (request).Content.ReadAsStringAsync());
+            var request1 = await client.SendAsync(new HttpRequestMessage
+            {
+                RequestUri = new Uri("http://motherfuckingwebsite.com"),
+                Version = HttpVersion.Version10
+            });
+
+            Console.Write(await (request1).Content.ReadAsStringAsync());
 
             Console.ReadKey();
             ws.Stop();
