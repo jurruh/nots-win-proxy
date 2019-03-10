@@ -1,0 +1,27 @@
+﻿<Window x:Class="GUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUI"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800"
+        ResizeMode="NoResize">
+
+    <Window.DataContext>
+        <local:MainWindowViewModel/>
+    </Window.DataContext>
+
+    <Grid>
+
+        <CheckBox Content="Privacy Modus" IsChecked="{Binding PrivacyModusEnabled}" HorizontalAlignment="Left" Margin="10,33,0,0" VerticalAlignment="Top"/>
+        <CheckBox Content="Block advertisements" IsChecked="{Binding AdBlockerEnabled}" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top"/>
+        <CheckBox Content="Cache web pages" IsChecked="{Binding CachingEnabled}" HorizontalAlignment="Left" Margin="10,73,0,0" VerticalAlignment="Top"/>
+        <CheckBox Content="Proxy authentication" IsChecked="{Binding CachingEnabled}" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top"/>
+        <TextBox HorizontalAlignment="Left" Height="22" Margin="10,154,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <Label Content="Port" HorizontalAlignment="Left" Margin="10,133,0,0" Padding="0" VerticalAlignment="Top"/>
+        <Label Content="Features" HorizontalAlignment="Left" Margin="10,10,0,0" Padding="0" VerticalAlignment="Top"/>
+        <Button Content="Start" Command="{Binding StartProxy}" HorizontalAlignment="Left" Margin="10,234,0,0" VerticalAlignment="Top" Width="76"/>
+
+    </Grid>
+</Window>

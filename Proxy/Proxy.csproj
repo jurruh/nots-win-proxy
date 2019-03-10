@@ -49,6 +49,7 @@
     <Compile Include="Filters\PrivacyResponseFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
+    <Compile Include="Settings.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Http\Http.csproj">
