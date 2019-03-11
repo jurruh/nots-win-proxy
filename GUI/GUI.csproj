@@ -97,6 +97,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Http\Http.csproj">
+      <Project>{40A08268-D61D-4355-A849-797A1D427CCF}</Project>
+      <Name>Http</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Proxy\Proxy.csproj">
       <Project>{f812482f-c1f2-47d4-9a15-f591520c34e6}</Project>
       <Name>Proxy</Name>

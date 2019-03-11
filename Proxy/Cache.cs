@@ -16,16 +16,18 @@ namespace Proxy
             this.dictionary = new Dictionary<string, Http.Response>();
         }
 
-
-        public void Add(Http.Request request, Http.Response response) {
+        public void Add(Http.Request request, Http.Response response)
+        {
             dictionary.Add(request.ToString(), response);
         }
 
-        public Boolean IsCached(Http.Request request) {
+        public Boolean IsCached(Http.Request request)
+        {
             return dictionary.ContainsKey(request.ToString()) && dictionary[request.ToString()] != null;
         }
 
-        public Http.Response Get(Http.Request request) {
+        public Http.Response Get(Http.Request request)
+        {
             return dictionary[request.ToString()];
         }
 

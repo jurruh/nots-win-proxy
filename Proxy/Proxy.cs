@@ -20,18 +20,35 @@ namespace Proxy
 
         private Cache Cache { get; set; }
 
-        public Proxy(int Port)
+        public event EventHandler<RequestEventArgs> RequestReceivedFromClient;
+        public event EventHandler<RequestEventArgs> RequestSendToExternalServer;
+        public event EventHandler<ResponseEventArgs> ResponseFromExternalServer;
+        public event EventHandler<ResponseEventArgs> ResponseSendToClient;
+
+        public Proxy(Settings settings)
         {
-            this.Port = Port;
-            this.Cache = new Cache();
+            this.Port = settings.Port;
+
+            if (settings.CachingEnabled)
+            {
+                this.Cache = new Cache();
+            }
 
             this.requestFilters = new List<Filter<Request>>();
             this.responseFilters = new List<Filter<Response>>();
 
-            // If there is time, this can be done using reflection
-            responseFilters.Add(new AdResponseFilter());
-            requestFilters.Add(new BasicAuthenticationRequestFilter());
-            requestFilters.Add(new PrivacyRequestFilter());
+            if (settings.AdBlockerEnabled) {
+                responseFilters.Add(new AdResponseFilter());
+            }
+
+            if (settings.AuthenticationEnabled) {
+                requestFilters.Add(new BasicAuthenticationRequestFilter());
+            }
+
+            if (settings.PrivacyModusEnabled) {
+                responseFilters.Add(new PrivacyResponseFilter());
+                requestFilters.Add(new PrivacyRequestFilter());
+            }
         }
 
         public async Task Start()
@@ -40,31 +57,35 @@ namespace Proxy
 
             server.RequestReceived += async (sender, args) =>
             {
+                RequestReceivedFromClient?.Invoke(this, new RequestEventArgs(args.Request));
                 var request = args.Request;
 
                 if (ApplyRequestFilters(args, ref request)) return;
 
-                if (Cache.IsCached(request)) {
+                if (Cache != null && Cache.IsCached(request)) {
                     args.ResponseAction(Cache.Get(request));
                     return;
                 }
 
+                RequestReceivedFromClient?.Invoke(this, new RequestEventArgs(request));
                 var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port);
                 var response = await httpClient.Get(request);
+                ResponseFromExternalServer?.Invoke(this, new ResponseEventArgs(response));
 
                 if (ApplyResponseFilters(args, ref response)) return;
 
                 if (response != null)
                 {
-                    Cache.Add(request, response);
+                    Cache?.Add(request, response);
                     args.ResponseAction(response);
+                    ResponseSendToClient?.Invoke(this, new ResponseEventArgs(response));
                 }
             };
 
             await server.Start();
         }
 
-        private bool ApplyResponseFilters(RequestEventArgs args, ref Response response)
+        private bool ApplyResponseFilters(Http.RequestEventArgs args, ref Response response)
         {
             foreach (var filter in responseFilters)
             {
@@ -73,6 +94,7 @@ namespace Proxy
                 if (filter.AbortResponse != null)
                 {
                     args.ResponseAction(filter.AbortResponse);
+                    ResponseSendToClient?.Invoke(this, new ResponseEventArgs(filter.AbortResponse));
                     return true;
                 }
             }
@@ -80,7 +102,7 @@ namespace Proxy
             return false;
         }
 
-        private bool ApplyRequestFilters(RequestEventArgs args, ref Request request)
+        private bool ApplyRequestFilters(Http.RequestEventArgs args, ref Request request)
         {
             foreach (var filter in requestFilters)
             {
@@ -89,6 +111,7 @@ namespace Proxy
                 if (filter.AbortResponse != null)
                 {
                     args.ResponseAction(filter.AbortResponse);
+                    ResponseSendToClient?.Invoke(this, new ResponseEventArgs(filter.AbortResponse));
                     return true;
                 }
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,6 @@ namespace GUI
 {
     class MainWindowViewModel : INotifyPropertyChanged
     {
-
         Proxy.Settings settings;
 
         public bool CachingEnabled {
@@ -48,14 +48,51 @@ namespace GUI
             set { settings.Port = value; NotifyPropertyChanged("Port"); }
         }
 
+        private Boolean proxyStopped = true;
+        public Boolean ProxyStopped
+        {
+            get { return proxyStopped; }
+            set { this.proxyStopped = value; NotifyPropertyChanged("ProxyStopped"); }
+        }
+
+        public ObservableCollection<string> messageLog = new ObservableCollection<string>() { "hehe", "haha" };
+        public ObservableCollection<string> MessageLog { 
+            get { return messageLog; }
+            set {
+                this.messageLog = value; NotifyPropertyChanged("MessageLog");
+            }
+        }
+
         public ICommand StartProxy { get; set; }
+
+        private Proxy.Proxy proxy;
 
         public MainWindowViewModel()
         {
             settings = new Proxy.Settings();
 
-            StartProxy = new RelayCommand((obj) => {
-                MessageBox.Show("Hoi");
+            MessageLog.CollectionChanged += (object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs args) => {
+                this.NotifyPropertyChanged("MessageLog");
+            };
+
+            StartProxy = new RelayCommand((obj) =>
+            {
+                proxy = new Proxy.Proxy(settings);
+
+                proxy.RequestReceivedFromClient += (sender, args) => Log(args.Request.ToString());
+                proxy.RequestSendToExternalServer += (sender, args) => Log(args.Request.ToString());
+                proxy.ResponseFromExternalServer += (sender, args) => Log(Encoding.ASCII.GetString(args.Response.GetBytes()));
+                proxy.ResponseSendToClient += (sender, args) => Log(Encoding.ASCII.GetString(args.Response.GetBytes()));
+
+                proxy.Start();
+                MessageLog.Add("Proxy started");
+                this.ProxyStopped = false;
+            });
+        }
+
+        public void Log(string log) {
+            App.Current.Dispatcher.Invoke(() => {
+                MessageLog.Add(log);
             });
         }
 
