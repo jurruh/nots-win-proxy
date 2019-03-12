@@ -12,6 +12,8 @@ namespace Http
     {
         public event EventHandler<RequestEventArgs> RequestReceived;
 
+        private TcpListener tcpListener;
+
         private int Port { get; set; }
 
         public Server(int port)
@@ -19,36 +21,43 @@ namespace Http
             this.Port = port;
         }
 
-        public async Task Start()
+        public void Stop()
         {
-            var tcpListener = new TcpListener(IPAddress.Any, Port);
+            tcpListener.Stop();
+        }
+
+        public void Start()
+        {
+            tcpListener = new TcpListener(IPAddress.Any, Port);
 
             tcpListener.Start();
 
-            while (true)
-            {
-                var client = await tcpListener.AcceptTcpClientAsync();
-
-                Task.Run(async () =>
+            Task.Run(async () => {
+                while (true)
                 {
-                    var stream = client.GetStream();
-                    var httpStream = new HttpStream(stream);
+                    var client = await tcpListener.AcceptTcpClientAsync();
 
-                    var request = await httpStream.ReadHttpStream<Request>();
-
-                    if (request != null && request.Uri.Port != -1 && request.Uri.Port != 443)
+                    Task.Run(async () =>
                     {
-                        RequestReceived?.Invoke(this,
-                            new RequestEventArgs(request, async response =>
-                            {
-                                await httpStream.Write(response);
-                                stream.Close();
-                            }));
-                    
-                    }
-                });
+                        var stream = client.GetStream();
+                        var httpStream = new HttpStream(stream);
 
-            }
+                        var request = await httpStream.ReadHttpStream<Request>();
+
+                        if (request != null && request.Uri.Port != -1 && request.Uri.Port != 443)
+                        {
+                            RequestReceived?.Invoke(this,
+                                new RequestEventArgs(request, async response =>
+                                {
+                                    await httpStream.Write(response);
+                                    stream.Close();
+                                }));
+                        }
+                    });
+
+                }
+            });
+
         }
     }
 }

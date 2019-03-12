@@ -52,10 +52,43 @@ namespace GUI
         public Boolean ProxyStopped
         {
             get { return proxyStopped; }
-            set { this.proxyStopped = value; NotifyPropertyChanged("ProxyStopped"); }
+            set { this.proxyStopped = value; NotifyPropertyChanged("ProxyStopped"); NotifyPropertyChanged("ProxyStarted"); }
         }
 
-        public ObservableCollection<string> messageLog = new ObservableCollection<string>() { "hehe", "haha" };
+        public Boolean ProxyStarted {
+            get { return !proxyStopped;  }
+        }
+
+        private Boolean logIncomingRequests = true;
+        public Boolean LogIncomingRequests
+        {
+            get { return logIncomingRequests; }
+            set { this.logIncomingRequests = value; NotifyPropertyChanged("LogIncomingRequests"); }
+        }
+
+        private Boolean logOutgoingRequests = true;
+        public Boolean LogOutgoingRequests
+        {
+            get { return logOutgoingRequests; }
+            set { this.logOutgoingRequests = value; NotifyPropertyChanged("LogOutgoingRequests"); }
+        }
+
+        private Boolean logIncomingResponses = true;
+        public Boolean LogIncomingResponses
+        {
+            get { return logIncomingResponses; }
+            set { this.logIncomingResponses = value; NotifyPropertyChanged("LogIncomingResponses"); }
+        }
+
+        private Boolean logOutgoingResponses = true;
+        public Boolean LogOutgoingResponses
+        {
+            get { return logOutgoingResponses; }
+            set { this.logOutgoingResponses = value; NotifyPropertyChanged("LogOutgoingResponses"); }
+        }
+
+
+        public ObservableCollection<string> messageLog = new ObservableCollection<string>() { };
         public ObservableCollection<string> MessageLog { 
             get { return messageLog; }
             set {
@@ -64,6 +97,8 @@ namespace GUI
         }
 
         public ICommand StartProxy { get; set; }
+
+        public ICommand StopProxy { get; set; }
 
         private Proxy.Proxy proxy;
 
@@ -75,18 +110,35 @@ namespace GUI
                 this.NotifyPropertyChanged("MessageLog");
             };
 
-            StartProxy = new RelayCommand((obj) =>
+            StartProxy = new RelayCommand(async (obj) =>
             {
                 proxy = new Proxy.Proxy(settings);
 
-                proxy.RequestReceivedFromClient += (sender, args) => Log(args.Request.ToString());
-                proxy.RequestSendToExternalServer += (sender, args) => Log(args.Request.ToString());
-                proxy.ResponseFromExternalServer += (sender, args) => Log(Encoding.ASCII.GetString(args.Response.GetBytes()));
-                proxy.ResponseSendToClient += (sender, args) => Log(Encoding.ASCII.GetString(args.Response.GetBytes()));
+                proxy.RequestReceivedFromClient += (sender, args) => { if (LogIncomingRequests) { Log(args.Request.ToString()); } };
+                proxy.RequestSendToExternalServer += (sender, args) => { if (LogOutgoingRequests) { Log(args.Request.ToString()); } };
+                proxy.ResponseFromExternalServer += (sender, args) => { if (LogIncomingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetBytes())); } };
+                proxy.ResponseSendToClient += (sender, args) => { if (LogOutgoingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetBytes())); } };
 
-                proxy.Start();
-                MessageLog.Add("Proxy started");
-                this.ProxyStopped = false;
+                try
+                {
+                    proxy.Start();
+                    Log("Proxy started");
+                    this.ProxyStopped = false;
+                }
+                catch (Exception e) {
+                    Log("Proxy cannot be started is there already a process running on this port?");
+                    this.ProxyStopped = true;
+                    return;
+                }
+
+
+            });
+
+            StopProxy = new RelayCommand((obj) =>
+            {
+                this.ProxyStopped = true;
+                proxy.Stop();
+                Log("Proxy Stopped");
             });
         }
 

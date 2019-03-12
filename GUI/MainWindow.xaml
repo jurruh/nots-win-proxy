@@ -17,14 +17,21 @@
         <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Privacy Modus" IsChecked="{Binding PrivacyModusEnabled}" HorizontalAlignment="Left" Margin="10,33,0,0" VerticalAlignment="Top"/>
         <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Block advertisements" IsChecked="{Binding AdBlockerEnabled}" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top"/>
         <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Cache web pages" IsChecked="{Binding CachingEnabled}" HorizontalAlignment="Left" Margin="10,73,0,0" VerticalAlignment="Top"/>
-        <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Proxy authentication" IsChecked="{Binding CachingEnabled}" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top"/>
-        <TextBox PreviewTextInput="NumberValidationTextBox" IsEnabled="{Binding ProxyStopped}" HorizontalAlignment="Left" Height="22" Margin="10,154,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Proxy authentication" IsChecked="{Binding AuthenticationEnabled}" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top"/>
+        
+        <TextBox PreviewTextInput="NumberValidationTextBox" IsEnabled="{Binding ProxyStopped}" HorizontalAlignment="Left" Height="22" Margin="10,154,0,0" TextWrapping="Wrap" Text="8080" VerticalAlignment="Top" Width="120"/>
         
         <Label Content="Port" HorizontalAlignment="Left" Margin="10,133,0,0" Padding="0" VerticalAlignment="Top"/>
         <Label Content="Features" HorizontalAlignment="Left" Margin="10,10,0,0" Padding="0" VerticalAlignment="Top"/>
-        <Button IsEnabled="{Binding ProxyStopped}" Content="Start" Command="{Binding StartProxy}" HorizontalAlignment="Left" Margin="10,234,0,0" VerticalAlignment="Top" Width="76"/>
+        <Button IsEnabled="{Binding ProxyStopped}" Content="Start" Command="{Binding StartProxy}" HorizontalAlignment="Left" Margin="10,199,0,0" VerticalAlignment="Top" Width="76"/>
 
         <ListBox ItemsSource="{Binding MessageLog}" Margin="223,10,33,21.5"/>
+
+        <CheckBox Content="Log Incoming Requests" IsChecked="{Binding LogIncomingRequests}" HorizontalAlignment="Left" Margin="13,248,0,0" VerticalAlignment="Top"/>
+        <CheckBox Content="Log Outgoing Requests" IsChecked="{Binding LogOutgoingRequests}" HorizontalAlignment="Left" Margin="13,268,0,0" VerticalAlignment="Top"/>
+        <CheckBox Content="Log Incoming Responses" IsChecked="{Binding LogIncomingResponses}" HorizontalAlignment="Left" Margin="13,288,0,0" VerticalAlignment="Top"/>
+        <CheckBox Content="Log Outgoing Responses" IsChecked="{Binding LogOutgoingResponses}" HorizontalAlignment="Left" Margin="13,308,0,0" VerticalAlignment="Top"/>
+        <Button IsEnabled="{Binding ProxyStarted}" Content="Stop" Command="{Binding StopProxy}" HorizontalAlignment="Left" Margin="91,199,0,0" VerticalAlignment="Top" Width="76"/>
 
 
     </Grid>

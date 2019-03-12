@@ -19,6 +19,7 @@ namespace Proxy
         private List<Filter<Response>> responseFilters;
 
         private Cache Cache { get; set; }
+        private Server server { get; set; }
 
         public event EventHandler<RequestEventArgs> RequestReceivedFromClient;
         public event EventHandler<RequestEventArgs> RequestSendToExternalServer;
@@ -51,9 +52,14 @@ namespace Proxy
             }
         }
 
-        public async Task Start()
+        public void Stop()
         {
-            var server = new Server(Port);
+            server.Stop();
+        }
+
+        public void Start()
+        {
+            server = new Server(Port);
 
             server.RequestReceived += async (sender, args) =>
             {
@@ -67,7 +73,7 @@ namespace Proxy
                     return;
                 }
 
-                RequestReceivedFromClient?.Invoke(this, new RequestEventArgs(request));
+                RequestSendToExternalServer?.Invoke(this, new RequestEventArgs(request));
                 var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port);
                 var response = await httpClient.Get(request);
                 ResponseFromExternalServer?.Invoke(this, new ResponseEventArgs(response));
@@ -82,7 +88,7 @@ namespace Proxy
                 }
             };
 
-            await server.Start();
+            server.Start();
         }
 
         private bool ApplyResponseFilters(Http.RequestEventArgs args, ref Response response)
