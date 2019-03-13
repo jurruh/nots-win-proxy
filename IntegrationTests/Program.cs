@@ -37,17 +37,11 @@ namespace IntegrationTests
 
             var request = await client.SendAsync(new HttpRequestMessage
             {
-                RequestUri = new Uri("http://motherfuckingwebsite.com"),
+                RequestUri = new Uri("http://loonbedrijf-houwers.nl/"),
                 Version = HttpVersion.Version10
             });
 
-            var request1 = await client.SendAsync(new HttpRequestMessage
-            {
-                RequestUri = new Uri("http://motherfuckingwebsite.com"),
-                Version = HttpVersion.Version10
-            });
-
-            Console.Write(await (request1).Content.ReadAsStringAsync());
+            Console.Write(await (request).Content.ReadAsStringAsync());
 
             Console.ReadKey();
             ws.Stop();

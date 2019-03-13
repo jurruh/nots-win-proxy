@@ -1,43 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Threading.Tasks.Dataflow;
 namespace Http
 {
     public abstract class Message
     {
         public string FirstLine { get; set; }
 
-        public string Content { get; set; } //TODO weghalen
+        protected string HeadersContent { get; set; } = "";
 
-        public Dictionary<string, string> Headers;
+        public Dictionary<string, string> Headers { get; set; }
 
-        public byte[] Body { get; set; } = new byte[0];
+        public BufferBlock<byte[]> BodyStream { get; set; }
+
+        private int CurrentBodySize { get; set; } = 0;
 
         public Message()
         {
+            BodyStream = new BufferBlock<byte[]>();
             Headers = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         }
+
+        public bool streamBody = false;
+        public List<byte> ByteContent = new List<byte>();
 
         public virtual void Load(byte[] bytes)
         {
             var content = Encoding.ASCII.GetString(bytes);
-            this.Content = content;
 
-            this.Headers = ParseHeaders(content);
+            if (HasHeaders())
+            {
+                Stream(bytes);
+            }
+            else
+            {
+                this.HeadersContent += content;
+                this.ByteContent = this.ByteContent.Concat(bytes).ToList();
+                this.Headers = ParseHeaders(this.HeadersContent);
 
-            this.Body = ParseBody(bytes);
+                if (HasHeaders()) {
+                    var dataStart = HeadersContent.IndexOf("\r\n\r\n") + 4;
+                    this.Stream(ByteContent.Skip(dataStart).ToArray());
+                }
+            }
+        }
+
+        public void Stream(byte[] bytes) {
+            CurrentBodySize += bytes.Length;
+            this.BodyStream.Post(bytes);
+        }
+
+        public Boolean HasHeaders()
+        {
+            return this.HeadersContent.Contains("\r\n\r\n");
         }
 
         public Boolean IsComplete()
         {
             int parsed;
-            return this.Content.Contains("\r\n\r\n") && (
+            return this.HeadersContent.Contains("\r\n\r\n") && (
                        !Headers.ContainsKey("Content-length") || 
-                       (Int32.TryParse(Headers["Content-length"], out parsed) && parsed == Body.Length)
+                       (Int32.TryParse(Headers["Content-length"], out parsed) && parsed == CurrentBodySize)
                        );
         }
 
@@ -90,7 +118,6 @@ namespace Http
             }
             else
             {
-                //not complete
                 return content.Skip(contentStart).ToArray();
             }
         }

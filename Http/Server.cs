@@ -49,7 +49,7 @@ namespace Http
                             RequestReceived?.Invoke(this,
                                 new RequestEventArgs(request, async response =>
                                 {
-                                    await httpStream.Write(response);
+                                    httpStream.Write(response);
                                     stream.Close();
                                 }));
                         }

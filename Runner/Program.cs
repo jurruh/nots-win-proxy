@@ -11,7 +11,8 @@ namespace Runner
         public static async Task Main(string[] args)
         {
             var proxy = new Proxy.Proxy(new Proxy.Settings());
-            await proxy.Start();
+            proxy.Start();
+            //Console.ReadLine();
         }
     }
 }

@@ -14,7 +14,7 @@ namespace Proxy
             //Block all images
             if (response.Headers.ContainsKey("Content-type") && response.Headers["Content-type"].ToLower().Contains("image"))
             {
-                response.Body = new byte[0];
+                //response.Body = new byte[0]; todo fix
             }
 
             return response;

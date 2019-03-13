@@ -23,20 +23,21 @@ namespace Http
         {
             try
             {
-                using (var client = new TcpClient(Host, Port))
+                var client = new TcpClient(Host, Port);
+                var stream = client.GetStream();
+                var httpStream = new HttpStream(stream);
+
+                //Todo remove encoding ascii
+                var s = request.ToString();
+                var bytes = Encoding.ASCII.GetBytes(request.ToString());
+                await stream.WriteAsync(bytes, 0, bytes.Length);
+
+                httpStream.BodyComplete += (sender, args) =>
                 {
-                    using (var stream = client.GetStream())
-                    {
-                        var httpStream = new HttpStream(stream);
+                    stream.Close();
+                };
 
-                        //Todo remove encoding ascii
-                        var s = request.ToString();
-                        var bytes = Encoding.ASCII.GetBytes(request.ToString());
-                        await stream.WriteAsync(bytes, 0, bytes.Length);
-
-                        return await httpStream.ReadHttpStream<Response>();
-                    }
-                }
+                return await httpStream.ReadHttpStream<Response>();
             }
             catch (Exception e)
             {

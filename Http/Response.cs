@@ -19,16 +19,11 @@ namespace Http
             var content = Encoding.ASCII.GetString(bytes);
         }
 
-        public byte[] GetBytes()
+        public byte[] GetHeaderBytes()
         {
             String status = $"HTTP/1.0 {this.Status} {this.StatusMessage}\r\n";
 
             String headers = "";
-
-            if (!IsClosableConnection())
-            {
-                headers += $"Content-length: {Body.Length}\r\n";
-            }
 
             foreach (var keyValuePair in this.Headers)
             {
@@ -38,9 +33,7 @@ namespace Http
                 }
             }
 
-            var upperContent = Encoding.ASCII.GetBytes($"{status}{headers}\r\n");
-
-            return upperContent.Concat(this.Body).ToArray();
+            return Encoding.ASCII.GetBytes($"{status}{headers}\r\n");
         }
     }
 }

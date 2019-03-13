@@ -19,10 +19,9 @@ namespace Http
         public override void Load(byte[] bytes)
         {
             base.Load(bytes);
-            var content = Encoding.ASCII.GetString(bytes);
 
-            this.Method = this.ParseMethod(content);
-            this.Uri = this.ParseUri(content);
+            this.Method = this.ParseMethod(this.HeadersContent);
+            this.Uri = this.ParseUri(this.HeadersContent);
         }
 
 

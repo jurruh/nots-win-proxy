@@ -116,8 +116,8 @@ namespace GUI
 
                 proxy.RequestReceivedFromClient += (sender, args) => { if (LogIncomingRequests) { Log(args.Request.ToString()); } };
                 proxy.RequestSendToExternalServer += (sender, args) => { if (LogOutgoingRequests) { Log(args.Request.ToString()); } };
-                proxy.ResponseFromExternalServer += (sender, args) => { if (LogIncomingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetBytes())); } };
-                proxy.ResponseSendToClient += (sender, args) => { if (LogOutgoingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetBytes())); } };
+                proxy.ResponseFromExternalServer += (sender, args) => { if (LogIncomingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetHeaderBytes())); } };
+                proxy.ResponseSendToClient += (sender, args) => { if (LogOutgoingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetHeaderBytes())); } };
 
                 try
                 {
