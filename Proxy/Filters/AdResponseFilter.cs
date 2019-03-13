@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Http;
+using System.Threading.Tasks.Dataflow;
 
 namespace Proxy
 {
@@ -14,7 +15,8 @@ namespace Proxy
             //Block all images
             if (response.Headers.ContainsKey("Content-type") && response.Headers["Content-type"].ToLower().Contains("image"))
             {
-                //response.Body = new byte[0]; todo fix
+                response.BodyStream = new BufferBlock<byte[]>();
+                response.Headers["Content-length"] = "0";
             }
 
             return response;

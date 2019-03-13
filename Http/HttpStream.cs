@@ -11,7 +11,7 @@ namespace Http
 {
     class HttpStream
     {
-        public static int Buffersize = 1;
+        public static int Buffersize = 1024;
 
         private NetworkStream Stream { get; set; }
 
@@ -28,23 +28,25 @@ namespace Http
 
             T result = null;
             result = new T();
-            while (!result.HasHeaders()) // First load headers
+            // First load headers
+            while (!result.HasHeaders())
             {
                 byte[] buffer = new byte[Buffersize];
                 await Stream.ReadAsync(buffer, 0, Buffersize);  
                 result.Load(buffer);
             }
 
-            // Now stream the content on a different Task
+            // Now stream the content in a different Task
             Task.Run(async () => {
                 while (true) {
                     byte[] buffer = new byte[Buffersize];
                     await Stream.ReadAsync(buffer, 0, Buffersize);
                     result.Load(buffer);
 
-                    if (buffer.Where(x => x == 0).ToList().Count == buffer.Length)
+                    if (result.IsComplete())
                     {
-                        break; // client disconnected
+                        result.BodyStream.Complete();
+                        break; // Message complete
                     }
 
                 }
@@ -62,18 +64,11 @@ namespace Http
 
             List<byte[]> chunks = new List<byte[]>();
 
-            while (
-                (response.Headers.ContainsKey("Content-length") && bodyBytesWritten < Int32.Parse(response.Headers["Content-length"])) ||
-                (!response.Headers.ContainsKey("Content-length"))
+            while ((response.Headers.ContainsKey("Content-length") && bodyBytesWritten < Int32.Parse(response.Headers["Content-length"]))
             ) {
                 try
                 {
                     byte[] bodyBuffer = response.BodyStream.Receive();
-
-                    if (bodyBuffer.Length > 0 && bodyBuffer.Where(x => x == 0).ToList().Count == bodyBuffer.Length)
-                    {
-                        break; // connection closed at this point
-                    }
 
                     Stream.Write(bodyBuffer, 0, bodyBuffer.Length);
 

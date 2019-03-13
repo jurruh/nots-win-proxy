@@ -42,7 +42,7 @@ namespace Proxy.Filters
             this.AbortResponse = new Http.Response();
             this.AbortResponse.Status = 407;
             this.AbortResponse.StatusMessage = "Proxy Authentication Required";
-            //this.AbortResponse.Body = Encoding.ASCII.GetBytes("Proxy Authentication Required"); Todo fix
+            this.AbortResponse.Headers["Content-length"] = "0";
         }
     }
 }

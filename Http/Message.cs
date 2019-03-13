@@ -51,6 +51,9 @@ namespace Http
         }
 
         public void Stream(byte[] bytes) {
+            if (Headers.ContainsKey("Content-length") && CurrentBodySize + bytes.Length > Int32.Parse(Headers["Content-length"])) {
+                bytes = bytes.Take(Int32.Parse(Headers["Content-length"]) - CurrentBodySize).ToArray();
+            }
             CurrentBodySize += bytes.Length;
             this.BodyStream.Post(bytes);
         }

@@ -11,9 +11,9 @@ namespace IntegrationTests
     public class WebServer
     {
         private readonly HttpListener _listener = new HttpListener();
-        private readonly Func<HttpListenerRequest, string> _responderMethod;
+        private readonly Func<HttpListenerContext, string> _responderMethod;
 
-        public WebServer(string[] prefixes, Func<HttpListenerRequest, string> method)
+        public WebServer(string[] prefixes, Func<HttpListenerContext, string> method)
         {
             if (!HttpListener.IsSupported)
                 throw new NotSupportedException(
@@ -35,7 +35,7 @@ namespace IntegrationTests
             _listener.Start();
         }
 
-        public WebServer(Func<HttpListenerRequest, string> method, params string[] prefixes)
+        public WebServer(Func<HttpListenerContext, string> method, params string[] prefixes)
             : this(prefixes, method) { }
 
         public void Run()
@@ -52,10 +52,14 @@ namespace IntegrationTests
                             var ctx = c as HttpListenerContext;
                             try
                             {
-                                string rstr = _responderMethod(ctx.Request);
-                                byte[] buf = Encoding.UTF8.GetBytes(rstr);
-                                ctx.Response.ContentLength64 = buf.Length;
-                                ctx.Response.OutputStream.Write(buf, 0, buf.Length);
+                                string rstr = _responderMethod(ctx);
+
+                                if (rstr != "") {
+                                    byte[] buf = Encoding.UTF8.GetBytes(rstr);
+                                    ctx.Response.ContentLength64 = buf.Length;
+                                    ctx.Response.OutputStream.Write(buf, 0, buf.Length);
+                                }
+                   
                             }
                             catch { } // suppress any exceptions
                             finally
