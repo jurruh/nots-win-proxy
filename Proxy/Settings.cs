@@ -19,5 +19,7 @@ namespace Proxy
         public int BufferSize { get; set; } = 1024;
 
         public int Port { get; set; } = 8080;
+
+        public bool TestMode { get; set; } = true;
     }
 }

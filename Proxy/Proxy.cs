@@ -50,6 +50,10 @@ namespace Proxy
                 responseFilters.Add(new PrivacyResponseFilter());
                 requestFilters.Add(new PrivacyRequestFilter());
             }
+
+            if (settings.TestMode) {
+                requestFilters.Add(new TestModeRequestFilter());
+            }
         }
 
         public void Stop()
@@ -74,6 +78,9 @@ namespace Proxy
                 }
 
                 RequestSendToExternalServer?.Invoke(this, new RequestEventArgs(request));
+
+                request.Headers["Host"] = "localhost";
+
                 var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port);
                 var response = await httpClient.Get(request);
                 ResponseFromExternalServer?.Invoke(this, new ResponseEventArgs(response));

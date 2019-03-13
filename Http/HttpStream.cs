@@ -11,7 +11,7 @@ namespace Http
 {
     class HttpStream
     {
-        public static int Buffersize = 1024 * 4;
+        public static int Buffersize = 1;
 
         private NetworkStream Stream { get; set; }
 
@@ -68,7 +68,7 @@ namespace Http
                 {
                     byte[] bodyBuffer = response.BodyStream.Receive();
 
-                    if (bodyBuffer.Where(x => x == 0).ToList().Count == bodyBuffer.Length)
+                    if (bodyBuffer.Length > 0 && bodyBuffer.Where(x => x == 0).ToList().Count == bodyBuffer.Length)
                     {
                         break; // connection closed at this point
                     }

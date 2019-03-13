@@ -53,6 +53,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Proxy\Proxy.csproj">
+      <Project>{f812482f-c1f2-47d4-9a15-f591520c34e6}</Project>
+      <Name>Proxy</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Runner\Runner.csproj">
       <Project>{66c42cce-c365-40a3-9c76-a62e5e1198f8}</Project>
       <Name>Runner</Name>

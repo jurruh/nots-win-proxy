@@ -66,7 +66,7 @@ namespace Http
             return this.HeadersContent.Contains("\r\n\r\n") && (
                        !Headers.ContainsKey("Content-length") || 
                        (Int32.TryParse(Headers["Content-length"], out parsed) && parsed == CurrentBodySize)
-                       );
+            );
         }
 
         public Boolean IsClosableConnection()

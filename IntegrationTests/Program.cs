@@ -16,35 +16,43 @@ namespace IntegrationTests
 
         static async Task Main(string[] args)
         {
-            var program = Runner.Program.Main(new string[0]);
+            await TestBasicProxyResult();
 
-            var proxy = new WebProxy()
-            {
-                Address = new Uri($"http://localhost:8080")
-            };
-            WebRequest.DefaultWebProxy = proxy;
+            Console.ReadKey();
+        }
 
-            var httpClientHandler = new HttpClientHandler()
-            {
-                Proxy = proxy,
-            };
-
-            var client = new HttpClient(handler: httpClientHandler, disposeHandler: true);
-
-            var ws = await SetupHttpServer();
-
-            client.DefaultRequestHeaders.ProxyAuthorization = new AuthenticationHeaderValue("Basic",Base64Encode("admin:admin"));
+        public static async Task TestBasicProxyResult() {
+            var client = SetupProxy(new Proxy.Settings() { Port = 9000 });
+            string result = "My result that is long enough .................................................................";
+            var ws = SetupHttpServer(9001, result);
 
             var request = await client.SendAsync(new HttpRequestMessage
             {
-                RequestUri = new Uri("http://loonbedrijf-houwers.nl/"),
+                RequestUri = new Uri("http://localhost.:9001"),
                 Version = HttpVersion.Version10
             });
 
-            Console.Write(await (request).Content.ReadAsStringAsync());
+            Assert("Basic proxying works", result, await (request).Content.ReadAsStringAsync());
+        }
 
-            Console.ReadKey();
-            ws.Stop();
+        public static void AssertTrue(string name, Boolean b) {
+            if (b)
+            {
+                Console.WriteLine($"OK: {name}");
+            }
+            else {
+                Console.WriteLine($"Failed: {name}");
+            }
+        }
+
+        public static void Assert(string name, string expected, string current) {
+            if (expected.Equals(current))
+            {
+                Console.WriteLine($"OK: {name}");
+            }
+            else {
+                Console.WriteLine($"FAILED: {name}");
+            }
         }
 
         public static string Base64Encode(string plainText)
@@ -53,13 +61,33 @@ namespace IntegrationTests
             return System.Convert.ToBase64String(plainTextBytes);
         }
 
+        static HttpClient SetupProxy(Proxy.Settings settings) {
+            settings.TestMode = true;
 
-        static async Task<WebServer> SetupHttpServer()
+            Proxy.Proxy proxy = new Proxy.Proxy(settings);
+            proxy.Start();
+
+            var webProxy = new WebProxy()
+            {
+                Address = new Uri($"http://localhost:{settings.Port}"),
+                BypassProxyOnLocal = false
+            };
+            WebRequest.DefaultWebProxy = webProxy;
+
+            var httpClientHandler = new HttpClientHandler()
+            {
+                Proxy = webProxy,
+            };
+
+            return new HttpClient(handler: httpClientHandler, disposeHandler: true);
+        }
+
+        static WebServer SetupHttpServer(int port, string content)
         {
             WebServer ws = new WebServer((HttpListenerRequest request) =>
             {
-                return string.Format("<HTML><BODY>My web page.<br>{0}</BODY></HTML>", DateTime.Now);
-            }, "http://localhost:8081/");
+                return content;
+            }, $"http://localhost:{port}/");
 
             ws.Run();
 
