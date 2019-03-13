@@ -16,7 +16,14 @@ namespace IntegrationTests
 
         static async Task Main(string[] args)
         {
+            Console.WriteLine("#########: Basic proxy tests");
             await TestBasicProxyResult();
+
+            Console.WriteLine("\n#########: Privacy modus");
+            await TestPrivacyModus();
+
+            Console.WriteLine("\n#########: Caching");
+            await TestCaching();
 
             Console.ReadKey();
         }
@@ -24,15 +31,81 @@ namespace IntegrationTests
         public static async Task TestBasicProxyResult() {
             var client = SetupProxy(new Proxy.Settings() { Port = 9000 });
             string result = "My result that is long enough .................................................................";
-            var ws = SetupHttpServer(9001, result);
 
-            var request = await client.SendAsync(new HttpRequestMessage
+            var ws = SetupHttpServer(9001, (HttpListenerRequest req) =>
+            {
+                return result;
+            });
+
+            var response = await client.SendAsync(new HttpRequestMessage
             {
                 RequestUri = new Uri("http://localhost.:9001"),
                 Version = HttpVersion.Version10
             });
 
-            Assert("Basic proxying works", result, await (request).Content.ReadAsStringAsync());
+            Assert("Basic proxying works", result, await (response).Content.ReadAsStringAsync());
+        }
+
+        public static async Task TestPrivacyModus()
+        {
+            var client = SetupProxy(new Proxy.Settings() { Port = 9002, PrivacyModusEnabled = true });
+            string result = "My result that is long enough .................................................................";
+
+            String useragent = ""; 
+            var ws = SetupHttpServer(9003, (HttpListenerRequest req) =>
+            {
+                useragent = req.UserAgent;
+                return result;
+            });
+
+            var response = await client.SendAsync(new HttpRequestMessage
+            {
+                RequestUri = new Uri("http://localhost.:9003"),
+                Version = HttpVersion.Version10
+            });
+
+            Assert("Basic proxying with privacy filter works", result, await (response).Content.ReadAsStringAsync());
+            Assert("User-Agent header set to Anonymous", "Anonymous", useragent);
+
+            IEnumerable<string> values;
+            string serverHeader = string.Empty;
+            if (response.Headers.TryGetValues("Server", out values))
+            {
+                serverHeader = values.FirstOrDefault();
+            }
+
+            Assert("Server header set to Anonymous", "Anonymous", serverHeader);
+        }
+
+        public static async Task TestCaching() {
+            var client = SetupProxy(new Proxy.Settings() { Port = 9004, CachingEnabled = true });
+            string result = "My result that is long enough .................................................................";
+
+            int amountIncomingRequests = 0;
+            String useragent = "";
+            var ws = SetupHttpServer(9005, (HttpListenerRequest req) =>
+            {
+                useragent = req.UserAgent;
+                amountIncomingRequests++;
+                return result;
+            });
+
+            var response1 = await client.SendAsync(new HttpRequestMessage
+            {
+                RequestUri = new Uri("http://localhost.:9005"),
+                Version = HttpVersion.Version10
+            });
+
+            Assert("Basic proxying with caching 1st time works", result, await (response1).Content.ReadAsStringAsync());
+
+            var response2 = await client.SendAsync(new HttpRequestMessage
+            {
+                RequestUri = new Uri("http://localhost.:9005"),
+                Version = HttpVersion.Version10
+            });
+
+            Assert("Basic proxying with caching 2nd time works", result, await (response2).Content.ReadAsStringAsync());
+            AssertTrue("Server only got 1 request", amountIncomingRequests == 1);
         }
 
         public static void AssertTrue(string name, Boolean b) {
@@ -46,13 +119,7 @@ namespace IntegrationTests
         }
 
         public static void Assert(string name, string expected, string current) {
-            if (expected.Equals(current))
-            {
-                Console.WriteLine($"OK: {name}");
-            }
-            else {
-                Console.WriteLine($"FAILED: {name}");
-            }
+            AssertTrue(name, expected.Equals(current));
         }
 
         public static string Base64Encode(string plainText)
@@ -82,12 +149,9 @@ namespace IntegrationTests
             return new HttpClient(handler: httpClientHandler, disposeHandler: true);
         }
 
-        static WebServer SetupHttpServer(int port, string content)
+        static WebServer SetupHttpServer(int port, Func<HttpListenerRequest, string> request)
         {
-            WebServer ws = new WebServer((HttpListenerRequest request) =>
-            {
-                return content;
-            }, $"http://localhost:{port}/");
+            WebServer ws = new WebServer(request, $"http://localhost:{port}/");
 
             ws.Run();
 

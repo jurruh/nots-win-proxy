@@ -89,8 +89,8 @@ namespace Proxy
 
                 if (response != null)
                 {
-                    Cache?.Add(request, response);
-                    args.ResponseAction(response);
+                    var bytes = args.ResponseAction(response);
+                    Cache?.Add(request, response, bytes);
                     ResponseSendToClient?.Invoke(this, new ResponseEventArgs(response));
                 }
             };

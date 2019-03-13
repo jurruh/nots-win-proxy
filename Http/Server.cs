@@ -47,10 +47,12 @@ namespace Http
                         if (request != null && request.Uri.Port != -1 && request.Uri.Port != 443)
                         {
                             RequestReceived?.Invoke(this,
-                                new RequestEventArgs(request, async response =>
+                                new RequestEventArgs(request, response =>
                                 {
-                                    httpStream.Write(response);
+                                    var bytes = httpStream.Write(response);
                                     stream.Close();
+
+                                    return bytes;
                                 }));
                         }
                     });

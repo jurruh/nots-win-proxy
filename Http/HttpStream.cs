@@ -53,12 +53,14 @@ namespace Http
             return result;
         }
 
-        public void Write(Response response)  
+        public List<byte[]> Write(Response response)  
         {
             byte[] buffer = response.GetHeaderBytes();
             Stream.Write(buffer, 0, buffer.Length);
 
             int bodyBytesWritten = 0;
+
+            List<byte[]> chunks = new List<byte[]>();
 
             while (
                 (response.Headers.ContainsKey("Content-length") && bodyBytesWritten < Int32.Parse(response.Headers["Content-length"])) ||
@@ -75,6 +77,8 @@ namespace Http
 
                     Stream.Write(bodyBuffer, 0, bodyBuffer.Length);
 
+                    chunks.Add(bodyBuffer);
+
                     bodyBytesWritten += bodyBuffer.Length;
                 }
                 catch (Exception e) {
@@ -82,6 +86,8 @@ namespace Http
                     break;
                 }
             }
+
+            return chunks;
         }
     }
 }
