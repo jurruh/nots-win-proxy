@@ -11,7 +11,10 @@ namespace Proxy.Filters
     {
         public override Request Apply(Request message)
         {
-            message.Headers["Host"] = "localhost";
+            if (message.Headers.ContainsKey("host")) {
+                message.Headers["Host"] = message.Headers["Host"].Replace("localhost.", "localhost");
+            }
+
             return message;
         }
     }

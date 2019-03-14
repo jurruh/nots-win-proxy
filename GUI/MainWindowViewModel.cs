@@ -100,24 +100,46 @@ namespace GUI
 
         public ICommand StopProxy { get; set; }
 
+        public ICommand ClearLog { get; set; }
+
         private Proxy.Proxy proxy;
 
         public MainWindowViewModel()
         {
             settings = new Proxy.Configuration();
 
-            MessageLog.CollectionChanged += (object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs args) => {
-                this.NotifyPropertyChanged("MessageLog");
-            };
-
             StartProxy = new RelayCommand(async (obj) =>
             {
+                if (settings.Port < 1 || settings.Port > 65535) {
+                    Log("Invalid port number");
+                    return;
+                }
+
                 proxy = new Proxy.Proxy(settings);
 
-                proxy.RequestReceivedFromClient += (sender, args) => { if (LogIncomingRequests) { Log(args.Request.ToString()); } };
-                proxy.RequestSendToExternalServer += (sender, args) => { if (LogOutgoingRequests) { Log(args.Request.ToString()); } };
-                proxy.ResponseFromExternalServer += (sender, args) => { if (LogIncomingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetHeaderBytes())); } };
-                proxy.ResponseSendToClient += (sender, args) => { if (LogOutgoingResponses) { Log(Encoding.ASCII.GetString(args.Response.GetHeaderBytes())); } };
+                proxy.RequestReceivedFromClient += (sender, args) => {
+                    if (LogIncomingRequests && args.Request != null) {
+                        Log("Request received from client:\n" + args.Request.ToString());
+                    }
+                };
+
+                proxy.RequestSendToExternalServer += (sender, args) => {
+                    if (LogOutgoingRequests && args.Request != null) {
+                        Log("Request sent to external server:\n" + args.Request.ToString());
+                    }
+                };
+
+                proxy.ResponseFromExternalServer += (sender, args) => {
+                    if (LogIncomingResponses && args.Response != null) {
+                        Log("Response received from external server:\n" + Encoding.ASCII.GetString(args.Response.GetHeaderBytes()));
+                    }
+                };
+
+                proxy.ResponseSendToClient += (sender, args) => {
+                    if (LogOutgoingResponses && args.Response != null) {
+                        Log("Response sent to client\n" + Encoding.ASCII.GetString(args.Response.GetHeaderBytes()));
+                    }
+                };
 
                 try
                 {
@@ -139,6 +161,10 @@ namespace GUI
                 this.ProxyStopped = true;
                 proxy.Stop();
                 Log("Proxy Stopped");
+            });
+
+            ClearLog = new RelayCommand((obj) => {
+                MessageLog.Clear();
             });
         }
 

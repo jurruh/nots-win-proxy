@@ -17,6 +17,8 @@ namespace IntegrationTests
 
         static async Task Main(string[] args)
         {
+            string result = "My result that is long enough .................................................................";
+
             Console.WriteLine("#########: Basic proxy tests");
             await TestBasicProxyResult();
 
@@ -34,6 +36,9 @@ namespace IntegrationTests
 
             Console.WriteLine("\n#########: Test images");
             await TestImages();
+
+            Console.WriteLine("\n!Press any key to start stress tests");
+            Console.ReadKey();
 
             Console.WriteLine("\n#########: Test simultaneous requests");
             await TestSimultaneousRequests();
@@ -184,7 +189,6 @@ namespace IntegrationTests
             }
             else {
                 Console.WriteLine($"Failed: {name}");
-                Console.ReadKey();
             }
         }
 
@@ -235,7 +239,7 @@ namespace IntegrationTests
                 return result;
             });
 
-            for (int x = 0; x < 10; x++)
+            for (int x = 0; x < 100; x++)
             {
                 int current = x;
                 Task.Run(async () => {
@@ -255,6 +259,7 @@ namespace IntegrationTests
 
             Proxy.Proxy proxy = new Proxy.Proxy(settings);
             proxy.Start();
+            Console.WriteLine("Proxy running...");
 
             var webProxy = new WebProxy()
             {

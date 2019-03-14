@@ -18,6 +18,8 @@ namespace Http
 
         private int Buffersize { get; set; }
 
+        public bool IsRunning { get; set; }
+
         public Server(int port, int buffersize)
         {
             this.Port = port;
@@ -26,11 +28,14 @@ namespace Http
 
         public void Stop()
         {
+            IsRunning = false;
             tcpListener.Stop();
         }
 
         public void Start()
         {
+            IsRunning = true;
+
             tcpListener = new TcpListener(IPAddress.Any, Port);
 
             tcpListener.Start();
