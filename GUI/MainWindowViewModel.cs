@@ -12,7 +12,7 @@ namespace GUI
 {
     class MainWindowViewModel : INotifyPropertyChanged
     {
-        Proxy.Settings settings;
+        Proxy.Configuration settings;
 
         public bool CachingEnabled {
             get { return settings.CachingEnabled; }
@@ -104,7 +104,7 @@ namespace GUI
 
         public MainWindowViewModel()
         {
-            settings = new Proxy.Settings();
+            settings = new Proxy.Configuration();
 
             MessageLog.CollectionChanged += (object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs args) => {
                 this.NotifyPropertyChanged("MessageLog");

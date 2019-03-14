@@ -10,24 +10,22 @@ namespace Http
 {
     public abstract class Message
     {
-        public string FirstLine { get; set; }
-
         protected string HeadersContent { get; set; } = "";
+
+        public List<byte> HeadersBytContent = new List<byte>();
 
         public Dictionary<string, string> Headers { get; set; }
 
-        public BufferBlock<byte[]> BodyStream { get; set; }
+        public BufferBlock<byte[]> BodyBuffer { get; set; }
 
-        private int CurrentBodySize { get; set; } = 0;
+        public int CurrentBodySize { get; set; } = 0;
 
         public Message()
         {
-            BodyStream = new BufferBlock<byte[]>();
+            BodyBuffer = new BufferBlock<byte[]>();
             Headers = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
         }
 
-        public bool streamBody = false;
-        public List<byte> ByteContent = new List<byte>();
 
         public virtual void Load(byte[] bytes)
         {
@@ -40,12 +38,12 @@ namespace Http
             else
             {
                 this.HeadersContent += content;
-                this.ByteContent = this.ByteContent.Concat(bytes).ToList();
+                this.HeadersBytContent = this.HeadersBytContent.Concat(bytes).ToList();
                 this.Headers = ParseHeaders(this.HeadersContent);
 
                 if (HasHeaders()) {
                     var dataStart = HeadersContent.IndexOf("\r\n\r\n") + 4;
-                    this.Stream(ByteContent.Skip(dataStart).ToArray());
+                    this.Stream(HeadersBytContent.Skip(dataStart).ToArray());
                 }
             }
         }
@@ -55,7 +53,7 @@ namespace Http
                 bytes = bytes.Take(Int32.Parse(Headers["Content-length"]) - CurrentBodySize).ToArray();
             }
             CurrentBodySize += bytes.Length;
-            this.BodyStream.Post(bytes);
+            this.BodyBuffer.Post(bytes);
         }
 
         public Boolean HasHeaders()

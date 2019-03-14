@@ -1,36 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using Http;
+﻿using Http;
 using Proxy.Filters;
+using System;
+using System.Collections.Generic;
 
 namespace Proxy
 {
     public class Proxy
     {
-        private int Port { get; set; }
 
         private Cache Cache { get; set; }
-        private Server server { get; set; }
+        private Server Server { get; set; }
 
         public event EventHandler<RequestEventArgs> RequestReceivedFromClient;
         public event EventHandler<RequestEventArgs> RequestSendToExternalServer;
         public event EventHandler<ResponseEventArgs> ResponseFromExternalServer;
         public event EventHandler<ResponseEventArgs> ResponseSendToClient;
 
-        private Settings Settings { get; set; }
+        private Configuration Configuration { get; set; }
 
-        public Proxy(Settings settings)
+        public Proxy(Configuration settings)
         {
 
-            this.Port = settings.Port;
-
-            this.Settings = settings;
+            this.Configuration = settings;
 
             if (settings.CachingEnabled)
             {
@@ -41,17 +32,17 @@ namespace Proxy
         private List<Filter<Request>> GetRequestFilters() {
             var requestFilters = new List<Filter<Request>>();
 
-            if (Settings.AuthenticationEnabled)
+            if (Configuration.AuthenticationEnabled)
             {
                 requestFilters.Add(new BasicAuthenticationRequestFilter());
             }
 
-            if (Settings.PrivacyModusEnabled)
+            if (Configuration.PrivacyModusEnabled)
             {
                 requestFilters.Add(new PrivacyRequestFilter());
             }
 
-            if (Settings.TestMode)
+            if (Configuration.TestMode)
             {
                 requestFilters.Add(new TestModeRequestFilter());
             }
@@ -62,12 +53,12 @@ namespace Proxy
         private List<Filter<Response>> GetResponseFilters() {
             var responsefilters = new List<Filter<Response>>();
 
-            if (Settings.AdBlockerEnabled)
+            if (Configuration.AdBlockerEnabled)
             {
                 responsefilters.Add(new AdResponseFilter());
             }
 
-            if (Settings.PrivacyModusEnabled)
+            if (Configuration.PrivacyModusEnabled)
             {
                 responsefilters.Add(new PrivacyResponseFilter());
             }
@@ -77,14 +68,14 @@ namespace Proxy
 
         public void Stop()
         {
-            server.Stop();
+            Server.Stop();
         }
 
         public void Start()
         {
-            server = new Server(Port);
+            Server = new Server(Configuration.Port, Configuration.BufferSize);
 
-            server.RequestReceived += async (sender, args) =>
+            Server.RequestReceived += async (sender, args) =>
             {
                 RequestReceivedFromClient?.Invoke(this, new RequestEventArgs(args.Request));
                 var request = args.Request;
@@ -98,7 +89,7 @@ namespace Proxy
 
                 RequestSendToExternalServer?.Invoke(this, new RequestEventArgs(request));
 
-                var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port);
+                var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port, Configuration.BufferSize);
                 var response = await httpClient.Get(request);
                 ResponseFromExternalServer?.Invoke(this, new ResponseEventArgs(response));
 
@@ -112,7 +103,7 @@ namespace Proxy
                 }
             };
 
-            server.Start();
+            Server.Start();
         }
 
         private bool ApplyResponseFilters(Http.RequestEventArgs args, ref Response response)

@@ -24,7 +24,6 @@ namespace Http
             this.Uri = this.ParseUri(this.HeadersContent);
         }
 
-
         private string ParseMethod(string content)
         {
             return content.Split(' ')[0];
@@ -56,11 +55,6 @@ namespace Http
             }
 
             return $"{status}{headers}\r\n";
-        }
-
-        public int ResolveToPort()
-        {
-            return 80;
         }
     }
 }

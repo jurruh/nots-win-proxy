@@ -17,8 +17,6 @@ namespace IntegrationTests
 
         static async Task Main(string[] args)
         {
-            await TestImages();
-
             Console.WriteLine("#########: Basic proxy tests");
             await TestBasicProxyResult();
 
@@ -34,35 +32,16 @@ namespace IntegrationTests
             Console.WriteLine("\n#########: Ad blocker test");
             await TestAdBlocker();
 
+            Console.WriteLine("\n#########: Test images");
+            await TestImages();
+
+            Console.WriteLine("\n#########: Test simultaneous requests");
+            await TestSimultaneousRequests();
             Console.ReadKey();
         }
 
-        public static async Task TestImages() {
-            var client = SetupProxy(new Proxy.Settings() { Port = 9010 });
-            var file = File.ReadAllBytes("test.jpeg");
-
-            var ws = SetupHttpServer(9011, (HttpListenerContext req) =>
-            {
-               req.Response.Headers.Add("Content-type", "image/jpeg");
-                req.Response.ContentLength64 = file.Length;
-                req.Response.OutputStream.Write(file, 0, file.Length);
-
-                return "";
-            });
-
-            var response = await client.SendAsync(new HttpRequestMessage
-            {
-                RequestUri = new Uri("http://localhost.:9011"),
-                Version = HttpVersion.Version10
-            });
-
-            var x = await response.Content.ReadAsByteArrayAsync();
-
-            AssertTrue("Image from proxy is the same as filesystem", x.Length == file.Length);
-        }
-
         public static async Task TestBasicProxyResult() {
-            var client = SetupProxy(new Proxy.Settings() { Port = 9000 });
+            var client = SetupProxy(new Proxy.Configuration() { Port = 9000 });
             string result = "My result that is long enough .................................................................";
 
             var ws = SetupHttpServer(9001, (HttpListenerContext req) =>
@@ -81,7 +60,7 @@ namespace IntegrationTests
 
         public static async Task TestPrivacyModus()
         {
-            var client = SetupProxy(new Proxy.Settings() { Port = 9002, PrivacyModusEnabled = true });
+            var client = SetupProxy(new Proxy.Configuration() { Port = 9002, PrivacyModusEnabled = true });
             string result = "My result that is long enough .................................................................";
 
             String useragent = ""; 
@@ -111,7 +90,7 @@ namespace IntegrationTests
         }
 
         public static async Task TestCaching() {
-            var client = SetupProxy(new Proxy.Settings() { Port = 9004, CachingEnabled = true });
+            var client = SetupProxy(new Proxy.Configuration() { Port = 9004, CachingEnabled = true });
             string result = "My result that is long enough .................................................................";
 
             int amountIncomingRequests = 0;
@@ -149,7 +128,7 @@ namespace IntegrationTests
 
         public static async Task TestAuthentication()
         {
-            var client = SetupProxy(new Proxy.Settings { Port = 9006, AuthenticationEnabled = true });
+            var client = SetupProxy(new Proxy.Configuration { Port = 9006, AuthenticationEnabled = true });
             string result = "My result that is long enough .................................................................";
 
             var ws = SetupHttpServer(9007, (HttpListenerContext req) =>
@@ -178,7 +157,7 @@ namespace IntegrationTests
 
         public static async Task TestAdBlocker()
         {
-            var client = SetupProxy(new Proxy.Settings { Port = 9008, AdBlockerEnabled = true });
+            var client = SetupProxy(new Proxy.Configuration { Port = 9008, AdBlockerEnabled = true });
 
             string result = "My result that is long enough .................................................................";
 
@@ -205,6 +184,7 @@ namespace IntegrationTests
             }
             else {
                 Console.WriteLine($"Failed: {name}");
+                Console.ReadKey();
             }
         }
 
@@ -218,7 +198,59 @@ namespace IntegrationTests
             return System.Convert.ToBase64String(plainTextBytes);
         }
 
-        static HttpClient SetupProxy(Proxy.Settings settings) {
+        public static async Task TestImages()
+        {
+            var client = SetupProxy(new Proxy.Configuration() { Port = 9010 });
+            var file = File.ReadAllBytes("test.jpeg");
+
+            var ws = SetupHttpServer(9011, (HttpListenerContext req) =>
+            {
+                req.Response.Headers.Add("Content-type", "image/jpeg");
+                req.Response.ContentLength64 = file.Length;
+                req.Response.OutputStream.Write(file, 0, file.Length);
+
+                return "";
+            });
+
+            var response = await client.SendAsync(new HttpRequestMessage
+            {
+                RequestUri = new Uri("http://localhost.:9011"),
+                Version = HttpVersion.Version10
+            });
+
+            var x = await response.Content.ReadAsByteArrayAsync();
+
+            AssertTrue("Image from proxy same size as filesystem", x.Length == file.Length);
+            AssertTrue("Image from proxy same content as filesystem", file.SequenceEqual(x));
+        }
+
+        public static async Task TestSimultaneousRequests()
+        {
+            var client = SetupProxy(new Proxy.Configuration() { Port = 9012 });
+
+            string result = "My result that is long enough .................................................................";
+
+            var ws = SetupHttpServer(9013, (HttpListenerContext req) =>
+            {
+                return result;
+            });
+
+            for (int x = 0; x < 10; x++)
+            {
+                int current = x;
+                Task.Run(async () => {
+                    var response = await client.SendAsync(new HttpRequestMessage
+                    {
+                        RequestUri = new Uri("http://localhost.:9013"),
+                        Version = HttpVersion.Version10
+                    });
+
+                    Assert($"Simultanous request {current}", result, await (response).Content.ReadAsStringAsync());
+                });
+            }
+        }
+
+        static HttpClient SetupProxy(Proxy.Configuration settings) {
             settings.TestMode = true;
 
             Proxy.Proxy proxy = new Proxy.Proxy(settings);

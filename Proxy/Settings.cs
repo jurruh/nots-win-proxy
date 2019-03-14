@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Proxy
 {
-    public class Settings
+    public class Configuration
     {
         public bool CachingEnabled { get; set; } = false;
 

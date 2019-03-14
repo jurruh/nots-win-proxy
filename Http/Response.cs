@@ -19,6 +19,18 @@ namespace Http
             var content = Encoding.ASCII.GetString(bytes);
         }
 
+        public Response Clone() {
+            var response = new Response();
+
+            response.Status = this.Status;
+            response.StatusMessage = this.StatusMessage;
+            response.HeadersContent = this.HeadersContent;
+            response.Headers = this.Headers;
+            response.CurrentBodySize = this.CurrentBodySize;
+
+            return response;
+        }
+
         public byte[] GetHeaderBytes()
         {
             String status = $"HTTP/1.0 {this.Status} {this.StatusMessage}\r\n";

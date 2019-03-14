@@ -10,37 +10,37 @@ namespace Proxy
     class Cache
     {
 
-        public Dictionary<string, Http.Response> dictionary { get; set; }
-        public Dictionary<string, List<byte[]>> body { get; set; }
+        public Dictionary<string, Http.Response> ResponseCache { get; set; }
+        public Dictionary<string, List<byte[]>> ResponseBodyCache { get; set; }
 
         public Cache()
         {
-            this.dictionary = new Dictionary<string, Http.Response>();
-            this.body = new Dictionary<string, List<byte[]>>();
+            this.ResponseCache = new Dictionary<string, Http.Response>();
+            this.ResponseBodyCache = new Dictionary<string, List<byte[]>>();
         }
 
         public void Add(Http.Request request, Http.Response response, List<byte[]> bytes)
         {
-            dictionary.Add(request.ToString(), response);
-            body.Add(request.ToString(), bytes);
+            ResponseCache.Add(request.ToString(), response);
+            ResponseBodyCache.Add(request.ToString(), bytes);
         }
 
         public Boolean IsCached(Http.Request request)
         {
-            return dictionary.ContainsKey(request.ToString()) && dictionary[request.ToString()] != null;
+            return ResponseCache.ContainsKey(request.ToString()) && ResponseCache[request.ToString()] != null;
         }
 
         public Http.Response Get(Http.Request request)
         {
-            var response = dictionary[request.ToString()];
+            var response = ResponseCache[request.ToString()].Clone();
 
-            response.BodyStream = new BufferBlock<byte[]>();
+            response.BodyBuffer = new BufferBlock<byte[]>();
 
             Task.Run(() => {
-                var cached = body[request.ToString()];
+                var cached = ResponseBodyCache[request.ToString()];
 
                 foreach(var chunks in cached) {
-                    response.BodyStream.Post(chunks);
+                    response.BodyBuffer.Post(chunks);
                 }
             });
 

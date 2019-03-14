@@ -10,7 +10,7 @@ namespace Runner
     {
         public static async Task Main(string[] args)
         {
-            var proxy = new Proxy.Proxy(new Proxy.Settings());
+            var proxy = new Proxy.Proxy(new Proxy.Configuration());
             proxy.Start();
             //Console.ReadLine();
         }

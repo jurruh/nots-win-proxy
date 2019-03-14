@@ -11,13 +11,14 @@ namespace Http
 {
     class HttpStream
     {
-        public static int Buffersize = 1024;
+        private int Buffersize {get; set;}
 
         private NetworkStream Stream { get; set; }
 
-        public HttpStream(NetworkStream stream)
+        public HttpStream(NetworkStream stream, int buffersize)
         {
             this.Stream = stream;
+            this.Buffersize = buffersize;
         }
 
         public event EventHandler BodyComplete;
@@ -28,6 +29,7 @@ namespace Http
 
             T result = null;
             result = new T();
+
             // First load headers
             while (!result.HasHeaders())
             {
@@ -36,7 +38,7 @@ namespace Http
                 result.Load(buffer);
             }
 
-            // Now stream the content in a different Task
+            // Now stream the body content in a different Task
             Task.Run(async () => {
                 while (true) {
                     byte[] buffer = new byte[Buffersize];
@@ -45,7 +47,7 @@ namespace Http
 
                     if (result.IsComplete())
                     {
-                        result.BodyStream.Complete();
+                        result.BodyBuffer.Complete();
                         break; // Message complete
                     }
 
@@ -68,7 +70,7 @@ namespace Http
             ) {
                 try
                 {
-                    byte[] bodyBuffer = response.BodyStream.Receive();
+                    byte[] bodyBuffer = response.BodyBuffer.Receive();
 
                     Stream.Write(bodyBuffer, 0, bodyBuffer.Length);
 

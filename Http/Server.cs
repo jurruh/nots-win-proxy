@@ -16,9 +16,12 @@ namespace Http
 
         private int Port { get; set; }
 
-        public Server(int port)
+        private int Buffersize { get; set; }
+
+        public Server(int port, int buffersize)
         {
             this.Port = port;
+            this.Buffersize = buffersize;
         }
 
         public void Stop()
@@ -40,7 +43,7 @@ namespace Http
                     Task.Run(async () =>
                     {
                         var stream = client.GetStream();
-                        var httpStream = new HttpStream(stream);
+                        var httpStream = new HttpStream(stream, Buffersize);
 
                         var request = await httpStream.ReadHttpStream<Request>();
 
