@@ -55,7 +55,7 @@
     <Compile Include="Proxy.cs" />
     <Compile Include="RequestEventArgs.cs" />
     <Compile Include="ResponseEventArgs.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="Configuration.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Http\Http.csproj">

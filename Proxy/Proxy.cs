@@ -91,6 +91,7 @@ namespace Proxy
 
                 var httpClient = new Http.Client(request.Uri.Host, request.Uri.Port, Configuration.BufferSize);
                 var response = await httpClient.Get(request);
+
                 ResponseFromExternalServer?.Invoke(this, new ResponseEventArgs(response));
 
                 if (ApplyResponseFilters(args, ref response)) return;

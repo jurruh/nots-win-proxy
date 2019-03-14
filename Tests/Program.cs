@@ -37,7 +37,7 @@ namespace IntegrationTests
             Console.WriteLine("\n#########: Test images");
             await TestImages();
 
-            Console.WriteLine("\n!Press any key to start stress tests");
+            Console.WriteLine("\n!Press any key to start simultaneous tests");
             Console.ReadKey();
 
             Console.WriteLine("\n#########: Test simultaneous requests");
