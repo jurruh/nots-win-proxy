@@ -17,6 +17,8 @@ namespace Http
             base.Load(bytes);
 
             var content = Encoding.ASCII.GetString(bytes);
+
+
         }
 
         public Response Clone() {

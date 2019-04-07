@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,14 +15,16 @@ namespace Http
 
         public string Method { get; set; } = "GET";
 
-        public Uri Uri { get; set; }
+        public String PathAndQuery { get; set; } = "/";
+
+        public TcpClient Sender { get; set; }
 
         public override void Load(byte[] bytes)
         {
             base.Load(bytes);
 
             this.Method = this.ParseMethod(this.HeadersContent);
-            this.Uri = this.ParseUri(this.HeadersContent);
+            this.PathAndQuery = this.ParseUri(this.HeadersContent);
         }
 
         private string ParseMethod(string content)
@@ -29,23 +32,14 @@ namespace Http
             return content.Split(' ')[0];
         }
 
-        public Uri ParseUri(string content)
+        public String ParseUri(string content)
         {
-            var splitted = content.Split(' ');
-
-            Uri outUri;
-
-            if (splitted.Length > 1 && Uri.TryCreate(splitted[1], UriKind.Absolute, out outUri))
-            {
-                return outUri;
-            }
-
-            return null;
+            return content.Split(' ')[1];
         }
 
         public override string ToString()
         {
-            String status = $"{Method} {Uri.PathAndQuery} {Protocol}\r\n";
+            String status = $"{Method} {PathAndQuery} {Protocol}\r\n";
 
             String headers = "";
 

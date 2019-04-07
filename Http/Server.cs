@@ -52,8 +52,9 @@ namespace Http
 
                         var request = await httpStream.ReadHttpStream<Request>();
 
-                        if (request != null && request.Uri.Port != -1 && request.Uri.Port != 443)
+                        if (request != null)
                         {
+                            request.Sender = client;
                             RequestReceived?.Invoke(this,
                                 new RequestEventArgs(request, response =>
                                 {

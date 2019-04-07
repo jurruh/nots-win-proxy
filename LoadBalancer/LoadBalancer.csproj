@@ -4,17 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{549429A8-1A77-4789-AFE8-6B6CB43E8DE8}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Tests</RootNamespace>
-    <AssemblyName>Tests</AssemblyName>
+    <ProjectGuid>{E8BA56BC-11E6-4DBC-A849-E10A78974B43}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>LoadBalancer</RootNamespace>
+    <AssemblyName>LoadBalancer</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,17 +21,14 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -45,21 +41,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Algo\CookiePersistence.cs" />
+    <Compile Include="Algo\RoundRobin.cs" />
+    <Compile Include="Algo\SessionTablePersistence.cs" />
+    <Compile Include="Configuration.cs" />
+    <Compile Include="HealthCheck.cs" />
+    <Compile Include="ILoadBalancerAlgo.cs" />
+    <Compile Include="LoadBalancer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Webserver.cs" />
+    <Compile Include="Server.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\LoadBalancer\LoadBalancer.csproj">
-      <Project>{e8ba56bc-11e6-4dbc-a849-e10a78974b43}</Project>
-      <Name>LoadBalancer</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Runner\Runner.csproj">
-      <Project>{66c42cce-c365-40a3-9c76-a62e5e1198f8}</Project>
-      <Name>Runner</Name>
+    <ProjectReference Include="..\Http\Http.csproj">
+      <Project>{40a08268-d61d-4355-a849-797a1d427ccf}</Project>
+      <Name>Http</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
