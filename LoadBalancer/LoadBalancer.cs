@@ -105,6 +105,10 @@ namespace LoadBalancer
                     Log($"Aborting with status: {response.Status} {response.StatusMessage}");
                 }
 
+                if (Configuration.LoadBalancerAlgo is IRegisterAndModifyResponse) {
+                    ((IRegisterAndModifyResponse)Configuration.LoadBalancerAlgo).RegisterAndModifyResponse(server, e.Request, response);
+                }
+
                 e.ResponseAction(response);
             };
         }

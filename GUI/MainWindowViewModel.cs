@@ -141,9 +141,9 @@ namespace GUI
 
                 try
                 {
+                    this.LoadBalancerStopped = false;
                     await loadBalancer.Start();
                     Log("Loadbalancer started");
-                    this.LoadBalancerStopped = false;
                 }
                 catch (Exception e) {
                     Log("Loadbalancer cannot be started is there already a process running on this port?");

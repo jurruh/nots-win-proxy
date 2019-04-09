@@ -4,14 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Http;
 
 namespace LoadBalancer.Algo
 {
-    public class CookiePersistence : RoundRobin
+    public class CookiePersistence : RoundRobin, IRegisterAndModifyResponse
     {
         private ConcurrentDictionary<string, Server> cache = new ConcurrentDictionary<string, Server>();
 
-        private string[] SESSION_COOKIES = new string[] { "sessid", "sessionid", "phpsessid" };
+        private const string SESSION_COOKIE = "sessionid";
 
         private string GetSessionId(Http.Request request) {
 
@@ -28,7 +29,7 @@ namespace LoadBalancer.Algo
                     var key = splitted[0];
                     var value = splitted[1];
 
-                    if (SESSION_COOKIES.Contains(key.ToLower())) {
+                    if (key == SESSION_COOKIE) {
                         return value;
                     }
                 }
@@ -59,10 +60,21 @@ namespace LoadBalancer.Algo
 
             var server = base.GetServer(request);
 
-            cache[sessionId] = server;
-
             return server;
         }
 
+        public Response RegisterAndModifyResponse(Server server, Http.Request request, Response response)
+        {
+            var sessionId = GetSessionId(request);
+
+            if (sessionId == null) {
+                sessionId = System.Guid.NewGuid().ToString();
+                response.Headers["Set-Cookie"] = $"{SESSION_COOKIE}={sessionId}";
+            }
+
+            cache[sessionId] = server;
+
+            return response;
+        }
     }
 }

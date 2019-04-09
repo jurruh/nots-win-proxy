@@ -47,6 +47,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="HealthCheck.cs" />
     <Compile Include="ILoadBalancerAlgo.cs" />
+    <Compile Include="IModifyResponse.cs" />
     <Compile Include="LoadBalancer.cs" />
     <Compile Include="LogEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
