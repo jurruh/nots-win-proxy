@@ -101,6 +101,10 @@
       <Project>{40A08268-D61D-4355-A849-797A1D427CCF}</Project>
       <Name>Http</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LoadBalancer\LoadBalancer.csproj">
+      <Project>{e8ba56bc-11e6-4dbc-a849-e10a78974b43}</Project>
+      <Name>LoadBalancer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

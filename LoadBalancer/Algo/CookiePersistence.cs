@@ -47,7 +47,14 @@ namespace LoadBalancer.Algo
 
             if (cache.ContainsKey(sessionId))
             {
-                return cache[sessionId];
+                var cachedServer = cache[sessionId];
+
+                if (!servers.Contains(cachedServer)) {
+                    request.AbortResponse = ResponseFactory.MakeBadGateWayResponse();
+                    return null;
+                }
+
+                return cachedServer;
             }
 
             var server = base.GetServer(request);

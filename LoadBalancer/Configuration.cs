@@ -13,7 +13,9 @@ namespace LoadBalancer
 
         public int BufferSize { get; set; } = 1024;
 
-        public List<Server> Servers { get; set; }
+        public int HealthCheckInterval { get; set; } = 30000;
+
+        public List<Server> Servers { get; set; } = new List<Server>();
 
         public ILoadBalancerAlgo LoadBalancerAlgo { get; set; } = new RoundRobin();
 

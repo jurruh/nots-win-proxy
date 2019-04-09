@@ -9,6 +9,8 @@ namespace Http
 {
     public class Request : Message
     {
+        public Response AbortResponse { get; set; }
+
         public string Location { get; set; } = "/";
 
         public string Protocol = "HTTP/1.0";

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,30 +13,7 @@ namespace GUI
 {
     class MainWindowViewModel : INotifyPropertyChanged
     {
-        Proxy.Configuration settings;
-
-        public bool CachingEnabled {
-            get { return settings.CachingEnabled; }
-            set { settings.CachingEnabled = value; NotifyPropertyChanged("CachingEnabled"); }
-        }
-
-        public bool AuthenticationEnabled
-        {
-            get { return settings.AuthenticationEnabled; }
-            set { settings.AuthenticationEnabled = value; NotifyPropertyChanged("AuthenticationEnabled"); }
-        }
-
-        public bool PrivacyModusEnabled
-        {
-            get { return settings.PrivacyModusEnabled; }
-            set { settings.PrivacyModusEnabled = value; NotifyPropertyChanged("PrivacyModusEnabled"); }
-        }
-
-        public bool AdBlockerEnabled
-        {
-            get { return settings.AdBlockerEnabled; }
-            set { settings.AdBlockerEnabled = value; NotifyPropertyChanged("AdBlockerEnabled"); }
-        }
+        LoadBalancer.Configuration settings;
 
         public int BufferSize {
             get { return settings.BufferSize; }
@@ -48,45 +26,69 @@ namespace GUI
             set { settings.Port = value; NotifyPropertyChanged("Port"); }
         }
 
-        private Boolean proxyStopped = true;
-        public Boolean ProxyStopped
+        public int MaxTimeout
         {
-            get { return proxyStopped; }
-            set { this.proxyStopped = value; NotifyPropertyChanged("ProxyStopped"); NotifyPropertyChanged("ProxyStarted"); }
+            get { return settings.MaxTimeout; }
+            set { settings.MaxTimeout = value; NotifyPropertyChanged("MaxTimeout"); }
         }
 
-        public Boolean ProxyStarted {
-            get { return !proxyStopped;  }
-        }
-
-        private Boolean logIncomingRequests = true;
-        public Boolean LogIncomingRequests
+        private string newServerEndpoint = "localhost";
+        public string NewServerEndpoint
         {
-            get { return logIncomingRequests; }
-            set { this.logIncomingRequests = value; NotifyPropertyChanged("LogIncomingRequests"); }
+            get { return newServerEndpoint; }
+            set { newServerEndpoint = value; NotifyPropertyChanged("NewServerEndpoint"); }
         }
 
-        private Boolean logOutgoingRequests = true;
-        public Boolean LogOutgoingRequests
+        private System.Type selectedAlgo;
+        public System.Type SelectedAlgo
         {
-            get { return logOutgoingRequests; }
-            set { this.logOutgoingRequests = value; NotifyPropertyChanged("LogOutgoingRequests"); }
+            get { return selectedAlgo; }
+            set { selectedAlgo = value; NotifyPropertyChanged("SelectedAlgo"); }
         }
 
-        private Boolean logIncomingResponses = true;
-        public Boolean LogIncomingResponses
+        public int HealthCheckInterval
         {
-            get { return logIncomingResponses; }
-            set { this.logIncomingResponses = value; NotifyPropertyChanged("LogIncomingResponses"); }
+            get { return settings.HealthCheckInterval; }
+            set { settings.HealthCheckInterval = value; NotifyPropertyChanged("HealthCheckInterval"); }
         }
 
-        private Boolean logOutgoingResponses = true;
-        public Boolean LogOutgoingResponses
+        private int newServerPort = 8081;
+        public int NewServerPort
         {
-            get { return logOutgoingResponses; }
-            set { this.logOutgoingResponses = value; NotifyPropertyChanged("LogOutgoingResponses"); }
+            get { return newServerPort; }
+            set { newServerPort = value; NotifyPropertyChanged("NewServerPort"); }
         }
 
+        public ObservableCollection<LoadBalancer.Server> servers = new ObservableCollection<LoadBalancer.Server>() { };
+        public ObservableCollection<LoadBalancer.Server> Servers
+        {
+            get { return servers; }
+            set
+            {
+                this.servers = value; NotifyPropertyChanged("Servers");
+            }
+        }
+
+        public ObservableCollection<System.Type> algos = new ObservableCollection<System.Type>() { };
+        public ObservableCollection<System.Type> Algos
+        {
+            get { return algos; }
+            set
+            {
+                this.algos = value; NotifyPropertyChanged("Algos");
+            }
+        }
+
+        private Boolean loadBalancerStopped = true;
+        public Boolean LoadBalancerStopped
+        {
+            get { return loadBalancerStopped; }
+            set { this.loadBalancerStopped = value; NotifyPropertyChanged("LoadBalancerStopped"); NotifyPropertyChanged("LoadBalancerStarted"); }
+        }
+
+        public Boolean LoadBalancerStarted {
+            get { return !loadBalancerStopped;  }
+        }
 
         public ObservableCollection<string> messageLog = new ObservableCollection<string>() { };
         public ObservableCollection<string> MessageLog { 
@@ -96,71 +98,86 @@ namespace GUI
             }
         }
 
-        public ICommand StartProxy { get; set; }
+        public ICommand StartLoadBalancer { get; set; }
 
-        public ICommand StopProxy { get; set; }
+        public ICommand AddServer { get; set; }
+
+        public ICommand StopLoadBalancer { get; set; }
 
         public ICommand ClearLog { get; set; }
 
-        private Proxy.Proxy proxy;
+        public ICommand ClearServers { get; set; }
+
+
+        private LoadBalancer.LoadBalancer loadBalancer;
 
         public MainWindowViewModel()
         {
-            settings = new Proxy.Configuration();
+            settings = new LoadBalancer.Configuration();
 
-            StartProxy = new RelayCommand(async (obj) =>
+            InitAlgos();
+
+            StartLoadBalancer = new RelayCommand(async (obj) =>
             {
                 if (settings.Port < 1 || settings.Port > 65535) {
                     Log("Invalid port number");
                     return;
                 }
 
-                proxy = new Proxy.Proxy(settings);
+                if (Servers.Count() == 0) {
+                    Log("Please add some servers");
+                    return;
+                }
 
-                proxy.RequestReceivedFromClient += (sender, args) => {
-                    if (LogIncomingRequests && args.Request != null) {
-                        Log("Request received from client:\n" + args.Request.ToString());
-                    }
-                };
+                settings.Servers = Servers.ToList();
+                settings.LoadBalancerAlgo = (LoadBalancer.ILoadBalancerAlgo)Activator.CreateInstance(SelectedAlgo);
 
-                proxy.RequestSendToExternalServer += (sender, args) => {
-                    if (LogOutgoingRequests && args.Request != null) {
-                        Log("Request sent to external server:\n" + args.Request.ToString());
-                    }
-                };
+                loadBalancer = new LoadBalancer.LoadBalancer(settings);
 
-                proxy.ResponseFromExternalServer += (sender, args) => {
-                    if (LogIncomingResponses && args.Response != null) {
-                        Log("Response received from external server:\n" + Encoding.ASCII.GetString(args.Response.GetHeaderBytes()));
-                    }
-                };
-
-                proxy.ResponseSendToClient += (sender, args) => {
-                    if (LogOutgoingResponses && args.Response != null) {
-                        Log("Response sent to client\n" + Encoding.ASCII.GetString(args.Response.GetHeaderBytes()));
-                    }
+                loadBalancer.OnLog += (sender, evt) =>
+                {
+                    this.Log(evt.Message);
                 };
 
                 try
                 {
-                    proxy.Start();
-                    Log("Proxy started");
-                    this.ProxyStopped = false;
+                    await loadBalancer.Start();
+                    Log("Loadbalancer started");
+                    this.LoadBalancerStopped = false;
                 }
                 catch (Exception e) {
-                    Log("Proxy cannot be started is there already a process running on this port?");
-                    this.ProxyStopped = true;
+                    Log("Loadbalancer cannot be started is there already a process running on this port?");
+                    this.LoadBalancerStopped = true;
+                    return;
+                }
+            });
+
+            ClearServers = new RelayCommand((obj) =>
+            {
+                this.servers.Clear();
+            });
+
+            StopLoadBalancer = new RelayCommand((obj) =>
+            {
+                this.LoadBalancerStopped = true;
+                loadBalancer.Stop();
+                Log("LoadBalancer Stopped");
+            });
+
+            AddServer = new RelayCommand((obj) =>
+            {
+                if (newServerPort < 1 || newServerPort > 65535)
+                {
+                    Log("Invalid port number");
                     return;
                 }
 
+                if (newServerEndpoint.Trim().Length == 0) {
+                    Log("No endpoint provided");
+                    return;
+                }
 
-            });
-
-            StopProxy = new RelayCommand((obj) =>
-            {
-                this.ProxyStopped = true;
-                proxy.Stop();
-                Log("Proxy Stopped");
+                this.Servers.Add(new LoadBalancer.Server() { Port = newServerPort, Endpoint = newServerEndpoint });
             });
 
             ClearLog = new RelayCommand((obj) => {
@@ -170,12 +187,25 @@ namespace GUI
 
         public void Log(string log) {
             App.Current.Dispatcher.Invoke(() => {
-                MessageLog.Add(log);
+                MessageLog.Add($"{DateTime.Now}: {log}");
             });
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-    
+
+        protected void InitAlgos() {
+            var type = typeof(LoadBalancer.ILoadBalancerAlgo);
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(p => type.IsAssignableFrom(p) && p.FullName != "LoadBalancer.ILoadBalancerAlgo");
+
+            SelectedAlgo = types.FirstOrDefault(t => t.FullName.Contains("RoundRobin"));
+
+            foreach(var t in types){
+                Algos.Add(t);
+            }
+        }
+
         protected void NotifyPropertyChanged(String info)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));

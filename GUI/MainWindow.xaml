@@ -1,11 +1,11 @@
-﻿ <Window x:Class="GUI.MainWindow"
+﻿<Window x:Class="GUI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GUI"
         mc:Ignorable="d"
-        Title="NotS Proxy" Height="800" Width="800"
+        Title="NotS LoadBalancer" Height="800" Width="800"
         ResizeMode="NoResize">
 
     <Window.DataContext>
@@ -13,30 +13,37 @@
     </Window.DataContext>
 
     <Grid>
-        <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Privacy modus" IsChecked="{Binding PrivacyModusEnabled}" HorizontalAlignment="Left" Margin="10,33,0,0" VerticalAlignment="Top"/>
-        <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Block advertisements" IsChecked="{Binding AdBlockerEnabled}" HorizontalAlignment="Left" Margin="10,53,0,0" VerticalAlignment="Top"/>
-        <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Cache web pages" IsChecked="{Binding CachingEnabled}" HorizontalAlignment="Left" Margin="10,73,0,0" VerticalAlignment="Top"/>
-        <CheckBox IsEnabled="{Binding ProxyStopped}" Content="Proxy authentication" IsChecked="{Binding AuthenticationEnabled}" HorizontalAlignment="Left" Margin="10,93,0,0" VerticalAlignment="Top"/>
+        <Label Content="Port" HorizontalAlignment="Left" Margin="12,16,0,0" Padding="0" VerticalAlignment="Top"/>
 
-        <TextBox PreviewTextInput="NumberValidationTextBox" IsEnabled="{Binding ProxyStopped}" HorizontalAlignment="Left" Height="22" Margin="10,154,0,0" TextWrapping="Wrap" Text="{Binding Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="120"/>
+        <TextBox PreviewTextInput="NumberValidationTextBox" IsEnabled="{Binding LoadBalancerStopped}" HorizontalAlignment="Left" Height="22" Margin="12,37,0,0" TextWrapping="Wrap" Text="{Binding Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="187"/>
 
-        <Label Content="Port" HorizontalAlignment="Left" Margin="10,133,0,0" Padding="0" VerticalAlignment="Top"/>
-        <Label Content="Features" HorizontalAlignment="Left" Margin="10,10,0,0" Padding="0" VerticalAlignment="Top"/>
-        <Button IsEnabled="{Binding ProxyStopped}" Content="Start" Command="{Binding StartProxy}" HorizontalAlignment="Left" Margin="10,181,0,0" VerticalAlignment="Top" Width="76"/>
+        <Label Content="Maxtimeout (ms)" HorizontalAlignment="Left" Margin="8,64,0,0" VerticalAlignment="Top" Width="158"/>
+        <TextBox IsEnabled="{Binding LoadBalancerStopped}" PreviewTextInput="NumberValidationTextBox" HorizontalAlignment="Left" Height="23" Margin="10,90,0,0" TextWrapping="Wrap" Text="{Binding MaxTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="189" RenderTransformOrigin="0.817,1.13"/>
+
+        <Label Content="Algo" HorizontalAlignment="Left" Margin="10,174,0,0" VerticalAlignment="Top" Width="158"/>
+        <ComboBox IsEnabled="{Binding LoadBalancerStopped}" ItemsSource="{Binding Algos}" SelectedItem="{Binding SelectedAlgo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Left" Margin="12,200,0,0" VerticalAlignment="Top" Width="187"/>
+
+
+        <ListBox IsEnabled="{Binding LoadBalancerStopped}" ItemsSource="{Binding Servers}" HorizontalAlignment="Left" Height="100" Margin="10,259,0,0" VerticalAlignment="Top" Width="189"/>
+        <Label Content="Servers" HorizontalAlignment="Left" Margin="10,233,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.421,-0.577" Width="56"/>
+        <TextBox IsEnabled="{Binding LoadBalancerStopped}" HorizontalAlignment="Left" Height="23" Margin="12,389,0,0" TextWrapping="Wrap" Text="{Binding NewServerEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="131"/>
+        <TextBox IsEnabled="{Binding LoadBalancerStopped}" PreviewTextInput="NumberValidationTextBox" HorizontalAlignment="Left" Height="22" Margin="154,389,0,0" TextWrapping="Wrap" Text="{Binding NewServerPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="45"/>
+        <Button IsEnabled="{Binding LoadBalancerStopped}" Content="+" Command="{Binding AddServer}" HorizontalAlignment="Left" Margin="154,416,0,0" VerticalAlignment="Top" Width="45"/>
+
+        <Label Content="Buffersize" HorizontalAlignment="Left" Margin="14,436,0,0" Padding="0" VerticalAlignment="Top"/>
+        <Slider AutoToolTipPlacement="TopLeft" IsEnabled="{Binding LoadBalancerStopped}" HorizontalAlignment="Left" Margin="14,452,0,0" VerticalAlignment="Top" Width="185" Value="{Binding BufferSize}" Maximum="4096" Minimum="1"/>
+        <Button Content="Clear" Command="{Binding ClearLog}" HorizontalAlignment="Left" Margin="223,727,0,0" VerticalAlignment="Top" Width="75"/>
+
+
 
         <ListBox ItemsSource="{Binding MessageLog}" Margin="223,10,33,44.5"/>
 
-        <CheckBox Content="Log Incoming Requests" IsChecked="{Binding LogIncomingRequests}" HorizontalAlignment="Left" Margin="14,274,0,0" VerticalAlignment="Top"/>
-        <CheckBox Content="Log Outgoing Requests" IsChecked="{Binding LogOutgoingRequests}" HorizontalAlignment="Left" Margin="14,294,0,0" VerticalAlignment="Top"/>
-        <CheckBox Content="Log Incoming Responses" IsChecked="{Binding LogIncomingResponses}" HorizontalAlignment="Left" Margin="14,314,0,0" VerticalAlignment="Top"/>
-        <CheckBox Content="Log Outgoing Responses" IsChecked="{Binding LogOutgoingResponses}" HorizontalAlignment="Left" Margin="14,334,0,0" VerticalAlignment="Top"/>
-        <Button IsEnabled="{Binding ProxyStarted}" Content="Stop" Command="{Binding StopProxy}" HorizontalAlignment="Left" Margin="90,181,0,0" VerticalAlignment="Top" Width="76"/>
-        <Label Content="Header log" HorizontalAlignment="Left" Margin="14,253,0,0" Padding="0" VerticalAlignment="Top"/>
+        <Button IsEnabled="{Binding LoadBalancerStopped}" Content="Start" Command="{Binding StartLoadBalancer}" HorizontalAlignment="Left" Margin="10,553,0,0" VerticalAlignment="Top" Width="85"/>
 
-        <Label Content="Buffersize" HorizontalAlignment="Left" Margin="14,366,0,0" Padding="0" VerticalAlignment="Top"/>
-        <Slider AutoToolTipPlacement="TopLeft" IsEnabled="{Binding ProxyStopped}" HorizontalAlignment="Left" Margin="14,382,0,0" VerticalAlignment="Top" Width="154" Value="{Binding BufferSize}" Maximum="4096" Minimum="1"/>
-        <Button Content="Clear" Command="{Binding ClearLog}" HorizontalAlignment="Left" Margin="223,732,0,0" VerticalAlignment="Top" Width="75"/>
-        <TextBlock HorizontalAlignment="Left" Margin="-83,472,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
+        <Button IsEnabled="{Binding LoadBalancerStarted}" Content="Stop" Command="{Binding StopLoadBalancer}" HorizontalAlignment="Left" Margin="117,553,0,0" VerticalAlignment="Top" Width="82" RenderTransformOrigin="0.382,-6.25"/>
+        <Label Content="Healthcheck interval (ms)" HorizontalAlignment="Left" Margin="10,119,0,0" VerticalAlignment="Top" Width="158"/>
+        <TextBox PreviewTextInput="NumberValidationTextBox" HorizontalAlignment="Left" Height="23" Margin="12,145,0,0" TextWrapping="Wrap" Text="{Binding HealthCheckInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Top" Width="187" RenderTransformOrigin="0.817,1.13"/>
+        <Button IsEnabled="{Binding LoadBalancerStopped}" Content="Clear" Command="{Binding ClearServers}" HorizontalAlignment="Left" Margin="10,359,0,0" VerticalAlignment="Top" Width="82" Height="20"/>
 
     </Grid>
 </Window>

@@ -18,11 +18,21 @@ namespace IntegrationTests
 
         static async Task Main(string[] args)
         {
+            Console.WriteLine("# Testing basic loadbalancing");
+            await TestBasicLoadbalancing();
+
+            Console.WriteLine("\n# Testing persistence with session cookei");
             await TestCookiePersistence();
-            //await TestOnlyHealthyServersTimeout();
-            //await TestLoadBalancerWorksWhenServerIsDown();
-            //await TestBasicProxyResult();
-            //await TestServertablePersistence();
+
+
+            Console.WriteLine("\n# Testing sessiontable persistence");
+            await TestServertablePersistence();
+
+            Console.WriteLine("\n# Testing healthchecking");
+            await TestOnlyHealthyServersTimeout();
+
+            Console.WriteLine("\n# Testing health monitoring skips servers dat are down");
+            await TestLoadBalancerWorksWhenServerIsDown();
 
             Console.ReadKey();
         }
@@ -43,7 +53,7 @@ namespace IntegrationTests
             });
 
 
-            await SetupLoadBalancer(new LoadBalancer.Configuration() { Port = 9044, Servers = servers, LoadBalancerAlgo = new CookiePersistence() });
+            var lb = await SetupLoadBalancer(new LoadBalancer.Configuration() { Port = 9044, Servers = servers, LoadBalancerAlgo = new CookiePersistence() });
 
             var baseAddress = new Uri("http://localhost:9044");
             var cookieContainer = new CookieContainer();
@@ -66,6 +76,14 @@ namespace IntegrationTests
                 var result2 = await client.GetStringAsync("/");
                 Assert("Second cookie persistence request works", "Server 2", result1);
                 Assert("Second cookie persistence request works", "Server 2", result2);
+
+                servers.Last().Port = 9999; // make unavailible
+
+                await lb.DoHealthCheck();
+
+                var result3 = await client.GetAsync("http://localhost:9044");
+
+                AssertTrue("Returns bad gateway when server is off", result3.StatusCode.Equals(HttpStatusCode.BadGateway));
             }
         }
 
@@ -134,24 +152,37 @@ namespace IntegrationTests
 
             var client = new HttpClient();
 
-            await SetupLoadBalancer(new LoadBalancer.Configuration() { Port = 9014, Servers = servers, LoadBalancerAlgo = new SessionTablePersistence() });
+            var lb = await SetupLoadBalancer(new LoadBalancer.Configuration() { Port = 9014, Servers = servers, LoadBalancerAlgo = new SessionTablePersistence() });
             var result1 = await client.GetStringAsync("http://localhost:9014");
             var result2 = await client.GetStringAsync("http://localhost:9014");
 
             Assert("ServertablePersistence has result 1", result1, "Server 1");
 
             Assert("ServertablePersistence works", result1, result2);
+
+            servers.First().Port = 9999; // make unavailible
+
+            await lb.DoHealthCheck();
+
+            var result3 = await client.GetAsync("http://localhost:9014");
+
+            AssertTrue("Returns bad gateway when server is off", result3.StatusCode.Equals(HttpStatusCode.BadGateway));
+
         }
 
-        public static async Task TestBasicProxyResult() {
+        public static async Task TestBasicLoadbalancing() {
             var servers = new List<LoadBalancer.Server>();
             servers.Add(new LoadBalancer.Server() { Endpoint = "localhost", Port = 9001 });
             servers.Add(new LoadBalancer.Server() { Endpoint = "localhost", Port = 9002 });
             servers.Add(new LoadBalancer.Server() { Endpoint = "localhost", Port = 9003 });
-            await SetupLoadBalancer(new LoadBalancer.Configuration() { Port = 9000, Servers = servers });
 
+            var doSleep = false;
             var ws1 = SetupHttpServer(9001, (HttpListenerContext req) =>
             {
+                if (doSleep) {
+                    Thread.Sleep(6000);
+                }
+
                 return "Server 1";
             });
 
@@ -165,6 +196,8 @@ namespace IntegrationTests
                 return "Server 3";
             });
 
+            await SetupLoadBalancer(new LoadBalancer.Configuration() { Port = 9000, Servers = servers });
+
             var client = new HttpClient();
 
             var result1 = await client.GetStringAsync("http://localhost:9000");
@@ -175,6 +208,11 @@ namespace IntegrationTests
 
             var result3 = await client.GetStringAsync("http://localhost:9000");
             Assert("Round Robin third request works", "Server 3", result3);
+
+            doSleep = true;
+
+            var result4 = await client.GetAsync("http://localhost:9000");
+            AssertTrue("Returns gateway timeout on timeout", result4.StatusCode.Equals(HttpStatusCode.GatewayTimeout));
         }
 
         public static void AssertTrue(string name, Boolean b)
@@ -194,10 +232,12 @@ namespace IntegrationTests
             AssertTrue(name, expected.Equals(current));
         }
 
-        static async Task SetupLoadBalancer(LoadBalancer.Configuration settings) {
+        static async Task<LoadBalancer.LoadBalancer> SetupLoadBalancer(LoadBalancer.Configuration settings) {
             var loadBalancer = new LoadBalancer.LoadBalancer(settings);
 
             await loadBalancer.Start();
+
+            return loadBalancer;
         }
 
         static WebServer SetupHttpServer(int port, Func<HttpListenerContext, string> request)

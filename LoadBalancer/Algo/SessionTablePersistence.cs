@@ -15,8 +15,17 @@ namespace LoadBalancer.Algo
         public override Server GetServer(Http.Request request) {
             var ip = ((IPEndPoint)request.Sender.Client.RemoteEndPoint).Address.ToString();
 
-            if (cache.ContainsKey(ip)) {
-                return cache[ip];
+            if (cache.ContainsKey(ip))
+            {
+                var cachedServer = cache[ip];
+
+                if (!servers.Contains(cachedServer))
+                {
+                    request.AbortResponse = ResponseFactory.MakeBadGateWayResponse();
+                    return null;
+                }
+
+                return cachedServer;
             }
 
             var server = base.GetServer(request);
