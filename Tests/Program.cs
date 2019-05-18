@@ -24,7 +24,6 @@ namespace IntegrationTests
             Console.WriteLine("\n# Testing persistence with session cookei");
             await TestCookiePersistence();
 
-
             Console.WriteLine("\n# Testing sessiontable persistence");
             await TestServertablePersistence();
 
@@ -60,7 +59,9 @@ namespace IntegrationTests
             using (var handler = new HttpClientHandler() { CookieContainer = cookieContainer })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
-                cookieContainer.Add(baseAddress, new Cookie("sessid", "1234"));
+                var result0 = await client.GetAsync("/");
+                var value = cookieContainer.GetCookies(baseAddress).Cast<Cookie>().FirstOrDefault(x => x.Name == "sessionid");
+                Console.WriteLine($"Got cookie {value.Value}");
                 var result1 = await client.GetStringAsync("/");
                 var result2 = await client.GetStringAsync("/");
                 Assert("First cookie persistence request works", "Server 1", result1);
@@ -71,7 +72,7 @@ namespace IntegrationTests
             using (var handler = new HttpClientHandler() { CookieContainer = cookieContainer })
             using (var client = new HttpClient(handler) { BaseAddress = baseAddress })
             {
-                cookieContainer.Add(baseAddress, new Cookie("sessid", "12345"));
+                cookieContainer.Add(baseAddress, new Cookie("sessionid", "12345"));
                 var result1 = await client.GetStringAsync("/");
                 var result2 = await client.GetStringAsync("/");
                 Assert("Second cookie persistence request works", "Server 2", result1);
@@ -79,7 +80,7 @@ namespace IntegrationTests
 
                 servers.Last().Port = 9999; // make unavailible
 
-                await lb.DoHealthCheck();
+                await lb.DoHealthCheckStartup();
 
                 var result3 = await client.GetAsync("http://localhost:9044");
 
@@ -162,7 +163,7 @@ namespace IntegrationTests
 
             servers.First().Port = 9999; // make unavailible
 
-            await lb.DoHealthCheck();
+            await lb.DoHealthCheckStartup();
 
             var result3 = await client.GetAsync("http://localhost:9014");
 
@@ -179,9 +180,9 @@ namespace IntegrationTests
             var doSleep = false;
             var ws1 = SetupHttpServer(9001, (HttpListenerContext req) =>
             {
-                if (doSleep) {
-                    Thread.Sleep(6000);
-                }
+                //if (doSleep) {
+                  //  Thread.Sleep(6000);
+                //}
 
                 return "Server 1";
             });

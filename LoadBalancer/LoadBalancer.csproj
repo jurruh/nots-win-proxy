@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Algo\CookiePersistence.cs" />
+    <Compile Include="Algo\Random.cs" />
     <Compile Include="Algo\RoundRobin.cs" />
     <Compile Include="Algo\SessionTablePersistence.cs" />
     <Compile Include="Configuration.cs" />

@@ -12,8 +12,6 @@ namespace LoadBalancer
 
         public Boolean IsRunning { get; set; } = false;
 
-        public List<Server> HealthyServers { get; set; }  = new List<Server>();
-
         private Http.Server httpServer;
 
         public event EventHandler<LogEventArgs> OnLog;
@@ -29,8 +27,10 @@ namespace LoadBalancer
             OnLog?.Invoke(this, new LogEventArgs(s));
         }
 
-        public async Task DoHealthCheck() {
-            var servers = new List<Server>();
+        List<Server> servers = new List<Server>();
+
+        public async Task DoHealthCheckStartup() {
+            servers = new List<Server>();
 
             Log("## - Performing healthcheck - ##");
 
@@ -50,6 +50,30 @@ namespace LoadBalancer
             Configuration.LoadBalancerAlgo.InitServers(servers);
         }
 
+        public async void AddServer(Server server) {
+            var check = new HealthCheck(server, Configuration.MaxTimeout, Configuration.BufferSize);
+
+            if (await check.IsOk())
+            {
+                Log($"{server} is healthy");
+                servers.Add(server);
+            }
+            else
+            {
+                Log($"{server} is unhealthy");
+            }
+
+            Configuration.LoadBalancerAlgo.InitServers(servers);
+        }
+
+        public void RemoveServer(Server server) {
+            servers.Remove(server);
+
+            Configuration.Servers = servers;
+
+            Configuration.LoadBalancerAlgo.InitServers(servers);
+        }
+
         public void Stop() {
             httpServer.Stop();
             IsRunning = false;
@@ -58,13 +82,13 @@ namespace LoadBalancer
         public async Task Start() {
             IsRunning = true;
 
-            await DoHealthCheck();
+            await DoHealthCheckStartup();
 
             Task.Run(async () => {
                 while (IsRunning)
                 {
                     await Task.Delay(Configuration.HealthCheckInterval);
-                    await DoHealthCheck();
+                    await DoHealthCheckStartup();
                 }
             });
 
@@ -108,6 +132,8 @@ namespace LoadBalancer
                 if (Configuration.LoadBalancerAlgo is IRegisterAndModifyResponse) {
                     ((IRegisterAndModifyResponse)Configuration.LoadBalancerAlgo).RegisterAndModifyResponse(server, e.Request, response);
                 }
+
+                Log($"Outgoing response: {Encoding.ASCII.GetString(response.GetHeaderBytes())}");
 
                 e.ResponseAction(response);
             };

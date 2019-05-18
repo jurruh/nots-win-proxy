@@ -46,6 +46,13 @@ namespace GUI
             set { selectedAlgo = value; NotifyPropertyChanged("SelectedAlgo"); }
         }
 
+        private LoadBalancer.Server selectedServer;
+        public LoadBalancer.Server SelectedServer
+        {
+            get { return selectedServer; }
+            set { selectedServer = value; NotifyPropertyChanged("SelectedServer"); }
+        }
+
         public int HealthCheckInterval
         {
             get { return settings.HealthCheckInterval; }
@@ -154,7 +161,12 @@ namespace GUI
 
             ClearServers = new RelayCommand((obj) =>
             {
-                this.servers.Clear();
+                if (!loadBalancerStopped)
+                {
+                    loadBalancer.RemoveServer(SelectedServer);
+                }
+
+                this.servers.Remove(SelectedServer);
             });
 
             StopLoadBalancer = new RelayCommand((obj) =>
@@ -177,7 +189,16 @@ namespace GUI
                     return;
                 }
 
-                this.Servers.Add(new LoadBalancer.Server() { Port = newServerPort, Endpoint = newServerEndpoint });
+                var server = new LoadBalancer.Server() { Port = newServerPort, Endpoint = newServerEndpoint };
+
+
+                settings.Servers = Servers.ToList();
+
+                this.Servers.Add(server);
+
+                if (!loadBalancerStopped) {
+                    loadBalancer.AddServer(server);
+                }
             });
 
             ClearLog = new RelayCommand((obj) => {
